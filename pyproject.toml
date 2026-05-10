@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycryptox"
-version = "1.0.0"
+version = "1.0.1"
 description = "Post-quantum cryptography library with built-in plausible deniability."
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 authors = [
     {name = "Mister Z"},
@@ -16,7 +16,6 @@ keywords = ["cryptography", "post-quantum", "encryption", "deniability", "ml-kem
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -32,7 +31,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Mister-ZE/pycryptox/blob/main/cryptox/documentation/en/INDEX.md"
+Documentation = "https://github.com/Mister-ZE/pycryptox/tree/main/pycryptox/documentation/en"
 Repository = "https://github.com/Mister-ZE/pycryptox"
 Issues = "https://github.com/Mister-ZE/pycryptox/issues"
 
