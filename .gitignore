@@ -1,0 +1,12 @@
+@"
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.egg-info/
+.eggs/
+*.whl
+_oqs/
+.venv/
+"@ | Out-File -Encoding utf8 .gitignore
