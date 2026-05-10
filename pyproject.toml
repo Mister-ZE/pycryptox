@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Mister-ZE/pycryptox/blob/main/pycryptox/documentation/en/INDEX.md"
+Documentation = "https://github.com/Mister-ZE/pycryptox/blob/main/cryptox/documentation/en/INDEX.md"
 Repository = "https://github.com/Mister-ZE/pycryptox"
 Issues = "https://github.com/Mister-ZE/pycryptox/issues"
 
