@@ -5,9 +5,9 @@ Ce document décrit le modèle de menace de Pycryptox, ses garanties, et ses lim
 
 ## Ce que Pycryptox garantit
 
-**Confidentialité des données au repos** : les bundles chiffrés et les keystores sont illisibles sans la clé ou le mot de passe correspondant. La confidentialité repose sur ML-KEM-512 (pour BLUE, RED, BLACK) et Argon2id + ChaCha20-Poly1305 (pour PURPLE et les keystores).
+**Confidentialité des données au repos** : les bundles chiffrés et les Keyx sont illisibles sans la clé ou le mot de passe correspondant. La confidentialité repose sur ML-KEM-512 (pour BLUE, RED, BLACK) et Argon2id + ChaCha20-Poly1305 (pour PURPLE et les Keyx).
 
-**Intégrité et authenticité** : ChaCha20-Poly1305 est un schéma AEAD (Authenticated Encryption with Associated Data). Toute modification d'un bundle ou d'un fichier keystore est détectée au déchiffrement. Un attaquant ne peut pas altérer un ciphertext sans que cela soit détecté.
+**Intégrité et authenticité** : ChaCha20-Poly1305 est un schéma AEAD (Authenticated Encryption with Associated Data). Toute modification d'un bundle ou d'un fichier Keyx est détectée au déchiffrement. Un attaquant ne peut pas altérer un ciphertext sans que cela soit détecté.
 
 **Résistance post-quantique** : les opérations asymétriques (BLUE, RED) utilisent ML-KEM-512, standardisé par le NIST sous FIPS 203, conçu pour résister aux attaques par ordinateur quantique (algorithme de Shor). PURPLE, étant purement symétrique (Argon2id + ChaCha20-Poly1305), est également résistant aux attaques quantiques connues (l'algorithme de Grover divise par deux la sécurité effective d'un schéma symétrique, mais 128 bits restent largement suffisants).
 
@@ -69,14 +69,14 @@ Pycryptox n'implémente pas de forward secrecy (secret de transmission). Si la c
 | `liboqs` (C) | ML-KEM-512 | Implémentation C, maintenue par le projet Open Quantum Safe (Linux Foundation). Constant-time. Pas encore FIPS 140-3 certifié (processus en cours). |
 | `cryptography` (Python/C) | ChaCha20-Poly1305 | Bindings Python pour OpenSSL/BoringSSL. Largement audité. |
 | `argon2-cffi` (Python/C) | Argon2id | Bindings Python pour l'implémentation de référence Argon2 en C. Vainqueur du Password Hashing Competition (2015). |
-| `rapidfuzz` (Python/C) | Recherche floue | Utilisé uniquement pour la recherche dans les keystores. Aucun impact sur la sécurité cryptographique. |
+| `rapidfuzz` (Python/C) | Recherche floue | Utilisé uniquement pour la recherche dans les Keyx. Aucun impact sur la sécurité cryptographique. |
 
 
 ## Recommandations
 
-1. **Utiliser des passphrases fortes** pour PURPLE et les keystores. La passphrase générée par `crx.purple.genkeys("1")` est un minimum acceptable.
+1. **Utiliser des passphrases fortes** pour PURPLE et les Keyx. La passphrase générée par `crx.purple.genkeys("1")` est un minimum acceptable.
 
-2. **Séparer physiquement les clés BLUE** en utilisant les keystores `keys` (sur la machine) et `ckeys` (sur un support externe). Dans un scénario sans déniabilité, seul le keystore `keys` est utilisé ; le keystore `ckeys` n'est pas créé.
+2. **Séparer physiquement les clés BLUE** en utilisant les Keyx `keys` (sur la machine) et `ckeys` (sur un support externe). Dans un scénario sans déniabilité, seul le Keyx `keys` est utilisé ; le Keyx `ckeys` n'est pas créé.
 
 3. **Distribuer les parts RED par des canaux séparés**. Ne pas envoyer toutes les parts au même endroit. Chaque participant doit stocker sa part indépendamment.
 

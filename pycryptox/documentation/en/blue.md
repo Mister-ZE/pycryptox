@@ -43,12 +43,12 @@ Alice wants to send a confidential message to Bob. She knows that an adversary c
 
 1. Alice generates a BLUE keyring: `gpubkey`, `xprivkey`, `yprivkey`.
 2. She encrypts the real message on the x channel and a credible decoy on the y channel.
-3. She stores `yprivkey` (the decoy key) in her main keystore (`keyx.bluekeys.keys`, on her machine).
-4. She stores `xprivkey` (the real key) in a separate keystore (`keyx.bluekeys.ckeys`, on a USB drive she keeps elsewhere).
+3. She stores `yprivkey` (the decoy key) in her main Keyx (`keyx.bluekeys.keys`, on her machine).
+4. She stores `xprivkey` (the real key) in a separate Keyx (`keyx.bluekeys.ckeys`, on a USB drive she keeps elsewhere).
 
 ### Coercion scenario
 
-An adversary forces Alice to open her keystore. Alice opens `channels.keys`, which contains `yprivkey`. The adversary decrypts the bundle and obtains the decoy. They cannot prove that the x channel exists: the bundle they see is an opaque blob, and `yprivkey` produces a credible message.
+An adversary forces Alice to open her Keyx. Alice opens `channels.keys`, which contains `yprivkey`. The adversary decrypts the bundle and obtains the decoy. They cannot prove that the x channel exists: the bundle they see is an opaque blob, and `yprivkey` produces a credible message.
 
 The USB drive containing `xprivkey` is physically absent. The adversary does not even know it exists.
 
@@ -211,7 +211,7 @@ The chemical keys contain the positions (indices in `mixmsg`) of each channel's 
 
 **Decoy credibility**: deniability is useless if the decoy message is not credible. An empty or absurd decoy ("test", "nothing") will convince no one. The decoy must look like a real message that the user would reasonably have sent.
 
-**Physical key separation**: deniability assumes that the adversary has access to only one private key. If both keys (`xprivkey` and `yprivkey`) are stored in the same place, the adversary finds them both and deniability is null. The keyx system provides two separate keystores (`keys` and `ckeys`) for exactly this reason.
+**Physical key separation**: deniability assumes that the adversary has access to only one private key. If both keys (`xprivkey` and `yprivkey`) are stored in the same place, the adversary finds them both and deniability is null. The keyx system provides two separate Keyx (`keys` and `ckeys`) for exactly this reason.
 
 **Unprotected metadata**: BLUE protects message content, not metadata. Send time, exchange frequency, the identity of the sender and recipient are not concealed by BLUE. To mask this metadata, an additional layer (anonymous network, steganography via YELLOW) is required.
 

@@ -1,6 +1,6 @@
 # Exceptions
 
-Toutes les exceptions de Pycryptox héritent de `PycryptoxError`, elle-même héritant de `Exception`. Elles sont exposées directement au niveau du module racine : `crx.DecryptionError`, `crx.KeystoreError`, etc.
+Toutes les exceptions de Pycryptox héritent de `PycryptoxError`, elle-même héritant de `Exception`. Elles sont exposées directement au niveau du module racine : `crx.DecryptionError`, `crx.KeyxError`, etc.
 
 
 ## Hiérarchie
@@ -15,9 +15,9 @@ Exception
     ├── EncryptionError          Échec de chiffrement.
     ├── StegaError               Échec de stéganographie (YELLOW, futur).
     ├── UnstegaError             Échec de déstéganographie (YELLOW, futur).
-    ├── KeystoreError            Erreur de keystore (fichier, format, état).
-    ├── KeyNameError             Erreur liée au nom d'une entrée dans un keystore.
-    └── WrongPasswordError       Mot de passe incorrect pour un keystore.
+    ├── KeyxError            Erreur de Keyx (fichier, format, état).
+    ├── KeyNameError             Erreur liée au nom d'une entrée dans un Keyx.
+    └── WrongPasswordError       Mot de passe incorrect pour un Keyx.
 ```
 
 
@@ -95,15 +95,15 @@ Réservée pour YELLOW v1.0. Non utilisée dans la version actuelle.
 Message : `"Error during unsteganography because '<raison>'"`.
 
 
-### `KeystoreError`
+### `KeyxError`
 
-Levée pour toute erreur liée à l'état ou au format d'un keystore.
+Levée pour toute erreur liée à l'état ou au format d'un Keyx.
 
-Message : `"Keystore error because '<raison>'"`.
+Message : `"Keyx error because '<raison>'"`.
 
 Causes possibles :
 - Extension de fichier incorrecte.
-- Magic de fichier incompatible (mauvais type de keystore).
+- Magic de fichier incompatible (mauvais type de Keyx).
 - Fichier corrompu.
 - Fichier introuvable.
 - Opération sur une session fermée.
@@ -112,7 +112,7 @@ Causes possibles :
 
 ### `KeyNameError`
 
-Levée pour les erreurs liées aux noms d'entrées dans un keystore.
+Levée pour les erreurs liées aux noms d'entrées dans un Keyx.
 
 Message : `"Key name error because '<raison>'"`.
 
@@ -125,7 +125,7 @@ Causes possibles :
 
 ### `WrongPasswordError`
 
-Levée quand le mot de passe fourni à un keystore est incorrect.
+Levée quand le mot de passe fourni à un Keyx est incorrect.
 
 Message : `"Wrong password"`.
 
@@ -145,7 +145,7 @@ except crx.DecryptionError:
 except crx.PycryptoxError:
     print("Autre erreur Pycryptox")
 
-# Intercepter spécifiquement les erreurs de keystore
+# Intercepter spécifiquement les erreurs de Keyx
 try:
     with crx.keyx.purplekeys.open("pwd", "store.purple") as s:
         s.getkey("unknown")
@@ -153,6 +153,6 @@ except crx.WrongPasswordError:
     print("Mot de passe incorrect")
 except crx.KeyNameError:
     print("Entrée non trouvée")
-except crx.KeystoreError:
-    print("Problème de keystore")
+except crx.KeyxError:
+    print("Problème de Keyx")
 ```

@@ -121,7 +121,7 @@ Extrait la version d'un bundle sans le déchiffrer.
 
 **Chiffrement de sauvegardes** : chiffrer un export de base de données avant de le stocker sur un cloud. La passphrase est notée sur papier dans un coffre physique.
 
-**Keystores** : PURPLE est le protocole utilisé en interne par tous les keystores keyx (purplekeys, bluekeys.keys, bluekeys.ckeys) pour chiffrer les fichiers `.purple`, `.keys` et `.ckeys`.
+**Keyxs** : PURPLE est le protocole utilisé en interne par tous les Keyx keyx (purplekeys, bluekeys.keys, bluekeys.ckeys) pour chiffrer les fichiers `.purple`, `.keys` et `.ckeys`.
 
 
 ## Exemple complet

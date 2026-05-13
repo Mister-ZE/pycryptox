@@ -1,6 +1,6 @@
 # Exceptions
 
-All Pycryptox exceptions inherit from `PycryptoxError`, which itself inherits from `Exception`. They are exposed directly at the root module level: `crx.DecryptionError`, `crx.KeystoreError`, etc.
+All Pycryptox exceptions inherit from `PycryptoxError`, which itself inherits from `Exception`. They are exposed directly at the root module level: `crx.DecryptionError`, `crx.KeyxError`, etc.
 
 
 ## Hierarchy
@@ -15,9 +15,9 @@ Exception
     ├── EncryptionError          Encryption failure.
     ├── StegaError               Steganography failure (YELLOW, future).
     ├── UnstegaError             Unsteganography failure (YELLOW, future).
-    ├── KeystoreError            Keystore error (file, format, state).
-    ├── KeyNameError             Error related to the name of an entry in a keystore.
-    └── WrongPasswordError       Incorrect password for a keystore.
+    ├── KeyxError            Keyx error (file, format, state).
+    ├── KeyNameError             Error related to the name of an entry in a Keyx.
+    └── WrongPasswordError       Incorrect password for a Keyx.
 ```
 
 
@@ -95,15 +95,15 @@ Reserved for YELLOW v1.0. Not used in the current version.
 Message: `"Error during unsteganography because '<reason>'"`.
 
 
-### `KeystoreError`
+### `KeyxError`
 
-Raised for any error related to the state or format of a keystore.
+Raised for any error related to the state or format of a Keyx.
 
-Message: `"Keystore error because '<reason>'"`.
+Message: `"Keyx error because '<reason>'"`.
 
 Possible causes:
 - Incorrect file extension.
-- Incompatible file magic (wrong keystore type).
+- Incompatible file magic (wrong Keyx type).
 - Corrupted file.
 - File not found.
 - Operation on a closed session.
@@ -112,7 +112,7 @@ Possible causes:
 
 ### `KeyNameError`
 
-Raised for errors related to entry names in a keystore.
+Raised for errors related to entry names in a Keyx.
 
 Message: `"Key name error because '<reason>'"`.
 
@@ -125,7 +125,7 @@ Possible causes:
 
 ### `WrongPasswordError`
 
-Raised when the password provided to a keystore is incorrect.
+Raised when the password provided to a Keyx is incorrect.
 
 Message: `"Wrong password"`.
 
@@ -145,7 +145,7 @@ except crx.DecryptionError:
 except crx.PycryptoxError:
     print("Other Pycryptox error")
 
-# Specifically catch keystore errors
+# Specifically catch Keyx errors
 try:
     with crx.keyx.purplekeys.open("pwd", "store.purple") as s:
         s.getkey("unknown")
@@ -153,6 +153,6 @@ except crx.WrongPasswordError:
     print("Incorrect password")
 except crx.KeyNameError:
     print("Entry not found")
-except crx.KeystoreError:
-    print("Keystore problem")
+except crx.KeyxError:
+    print("Keyx problem")
 ```

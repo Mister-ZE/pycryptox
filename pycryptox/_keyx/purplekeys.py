@@ -33,7 +33,7 @@ _PURPLE_VERSION = "1"
 
 def _validate_extension(dbpath: Path) -> None:
     if dbpath.suffix != _REQUIRED_EXTENSION:
-        raise KeystoreError(f"path must end with '{_REQUIRED_EXTENSION}'")
+        raise KeyxError(f"path must end with '{_REQUIRED_EXTENSION}'")
 
 
 def _atomic_write(dbpath: Path, data: bytes) -> None:
@@ -55,14 +55,14 @@ def _atomic_write(dbpath: Path, data: bytes) -> None:
 
 def _read_layout(dbpath: Path) -> tuple[str, str]:
     if not dbpath.exists():
-        raise KeystoreError(f"database not found at '{dbpath}'")
+        raise KeyxError(f"database not found at '{dbpath}'")
     with builtins.open(dbpath, "rb") as f:
         data = f.read()
     if len(data) < 20 or data[:16] != _MAGIC:
-        raise KeystoreError("invalid or corrupted database")
+        raise KeyxError("invalid or corrupted database")
     head_len = struct.unpack(">I", data[16:20])[0]
     if 20 + head_len > len(data):
-        raise KeystoreError("invalid or corrupted database")
+        raise KeyxError("invalid or corrupted database")
     head_ct = data[20:20 + head_len].decode("ascii")
     payload_ct = data[20 + head_len:].decode("ascii")
     return head_ct, payload_ct
@@ -72,7 +72,7 @@ def _write_layout(dbpath: Path, head_ct: str, payload_ct: str) -> None:
     head_bytes = head_ct.encode("ascii")
     payload_bytes = payload_ct.encode("ascii")
     if len(head_bytes) > 0xFFFFFFFF:
-        raise KeystoreError("head too large")
+        raise KeyxError("head too large")
     data = _MAGIC + struct.pack(">I", len(head_bytes)) + head_bytes + payload_bytes
     _atomic_write(dbpath, data)
 
@@ -90,15 +90,15 @@ def _parse_payload(payload_str: str) -> dict[str, str]:
     try:
         obj = json.loads(payload_str)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     if not isinstance(obj, dict) or obj.get("format") != _FORMAT_TAG:
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     entries = obj.get("entries")
     if not isinstance(entries, dict):
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     for k, v in entries.items():
         if not isinstance(k, str) or not isinstance(v, str):
-            raise KeystoreError("corrupted payload")
+            raise KeyxError("corrupted payload")
     return entries
 
 
@@ -279,7 +279,7 @@ class _PurpleSession:
 
     def _check_open(self) -> None:
         if self._closed:
-            raise KeystoreError("session is closed")
+            raise KeyxError("session is closed")
 
 
 # -- Main functions: --
@@ -292,20 +292,20 @@ __all__ = [
 
 
 def createdb(password: str, dbpath: str | os.PathLike) -> None:
-    """Create a new empty keystore at `dbpath`, encrypted with `password`."""
+    """Create a new empty Keyx at `dbpath`, encrypted with `password`."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
     dbpath = Path(dbpath)
     _validate_extension(dbpath)
     if dbpath.exists():
-        raise KeystoreError(f"database already exists at '{dbpath}'")
+        raise KeyxError(f"database already exists at '{dbpath}'")
     head_ct = _make_head(password)
     payload_ct = _make_payload(password, {})
     _write_layout(dbpath, head_ct, payload_ct)
 
 
 def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = True) -> None:
-    """Destroy the keystore at `dbpath`.\n
+    """Destroy the Keyx at `dbpath`.\n
     By default verifies `password` first. Set `passwordrequired=False`\n
     to delete unconditionally (useful for corrupted stores).\n
     NOTE: on SSDs, overwriting before deletion is best-effort only due\n
@@ -315,7 +315,7 @@ def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = T
     dbpath = Path(dbpath)
     _validate_extension(dbpath)
     if not dbpath.exists():
-        raise KeystoreError(f"database not found at '{dbpath}'")
+        raise KeyxError(f"database not found at '{dbpath}'")
     if passwordrequired:
         head_ct, _ = _read_layout(dbpath)
         try:
@@ -334,7 +334,7 @@ def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = T
 
 
 def verify(password: str, dbpath: str | os.PathLike) -> bool:
-    """Return True if `password` decrypts the keystore head."""
+    """Return True if `password` decrypts the Keyx head."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
     dbpath = Path(dbpath)
@@ -348,7 +348,7 @@ def verify(password: str, dbpath: str | os.PathLike) -> bool:
 
 
 def open(password: str, dbpath: str | os.PathLike) -> _PurpleSession:
-    """Open a keystore session. Use as a context manager:\n
+    """Open a Keyx session. Use as a context manager:\n
     ```python
     with crx.keyx.purplekeys.open(password, dbpath) as s:
         s.add("name", "key")
@@ -366,6 +366,6 @@ def open(password: str, dbpath: str | os.PathLike) -> _PurpleSession:
     try:
         payload_str = purple.decrypt(_PURPLE_VERSION, password, payload_ct)
     except DecryptionError:
-        raise KeystoreError("payload corrupted or tampered")
+        raise KeyxError("payload corrupted or tampered")
     entries = _parse_payload(payload_str)
     return _PurpleSession(password, dbpath, entries)

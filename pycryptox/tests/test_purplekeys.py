@@ -25,9 +25,9 @@ def test_purplekeys() -> tuple[int, int]:
     c.assert_ok("createdb creates file", lambda: pk.createdb(PWD, db))
     c.assert_true("file exists after createdb", lambda: db.exists())
     c.assert_raise("createdb refuses existing path",
-                   crx.KeystoreError, lambda: pk.createdb(PWD, db))
+                   crx.KeyxError, lambda: pk.createdb(PWD, db))
     c.assert_raise("createdb refuses bad extension",
-                   crx.KeystoreError, lambda: pk.createdb(PWD, tmp / "x.txt"))
+                   crx.KeyxError, lambda: pk.createdb(PWD, tmp / "x.txt"))
     c.assert_raise("createdb refuses non-str password",
                    crx.ArgumentTypeError, lambda: pk.createdb(123, tmp / "x.purple"))
 
@@ -40,7 +40,7 @@ def test_purplekeys() -> tuple[int, int]:
     c.assert_true("verify False with wrong password",
                   lambda: pk.verify("wrong", db) is False)
     c.assert_raise("verify raises on missing file",
-                   crx.KeystoreError, lambda: pk.verify(PWD, tmp / "ghost.purple"))
+                   crx.KeyxError, lambda: pk.verify(PWD, tmp / "ghost.purple"))
 
     # -- open --
     c.assert_raise("open raises WrongPasswordError",
@@ -143,7 +143,7 @@ def test_purplekeys() -> tuple[int, int]:
     sc = pk.open(PWD, db)
     sc.close()
     c.assert_raise("closed session: getkey raises",
-                   crx.KeystoreError, lambda: sc.getkey("gmail"))
+                   crx.KeyxError, lambda: sc.getkey("gmail"))
     try:
         sc.close()
         c.ok("close() is idempotent")

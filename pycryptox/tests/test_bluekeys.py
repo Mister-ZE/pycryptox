@@ -34,9 +34,9 @@ def test_bluekeys() -> tuple[int, int]:
     c.assert_ok("keys: createdb creates file", lambda: bk.createdb(PWD, keys_db))
     c.assert_true("keys: file exists", lambda: keys_db.exists())
     c.assert_raise("keys: createdb refuses .purple extension",
-                   crx.KeystoreError, lambda: bk.createdb(PWD, tmp / "x.purple"))
+                   crx.KeyxError, lambda: bk.createdb(PWD, tmp / "x.purple"))
     c.assert_raise("keys: createdb refuses .ckeys extension",
-                   crx.KeystoreError, lambda: bk.createdb(PWD, tmp / "x.ckeys"))
+                   crx.KeyxError, lambda: bk.createdb(PWD, tmp / "x.ckeys"))
 
     # -- verify --
     c.assert_true("keys: verify True", lambda: bk.verify(PWD, keys_db) is True)
@@ -77,8 +77,8 @@ def test_bluekeys() -> tuple[int, int]:
                        lambda: s.add("alice", "a", "b", "c"))
         c.assert_raise("keys: add empty name raises KeyNameError",
                        crx.KeyNameError, lambda: s.add("", "a", "b", "c"))
-        c.assert_raise("keys: add empty privkey raises KeystoreError",
-                       crx.KeystoreError,
+        c.assert_raise("keys: add empty privkey raises KeyxError",
+                       crx.KeyxError,
                        lambda: s.add("x", alice["gpubkey"], bob["gpubkey"], ""))
         c.assert_raise("keys: add non-str raises ArgumentTypeError",
                        crx.ArgumentTypeError,
@@ -92,8 +92,8 @@ def test_bluekeys() -> tuple[int, int]:
                     lambda: s.get("alice")["mygpubkey"], alice["gpubkey"])
         c.assert_raise("keys: update unknown raises KeyNameError",
                        crx.KeyNameError, lambda: s.update("ghost", privkey="x"))
-        c.assert_raise("keys: update empty value raises KeystoreError",
-                       crx.KeystoreError, lambda: s.update("alice", privkey=""))
+        c.assert_raise("keys: update empty value raises KeyxError",
+                       crx.KeyxError, lambda: s.update("alice", privkey=""))
 
         # -- rename --
         s.rename("bob", "bobby")
@@ -163,7 +163,7 @@ def test_bluekeys() -> tuple[int, int]:
                     lambda: s.get("alice")["cprivkey"], alice["xprivkey"])
 
         c.assert_raise("ckeys: add empty cprivkey raises",
-                       crx.KeystoreError,
+                       crx.KeyxError,
                        lambda: s.add("x", alice["gpubkey"], bob["gpubkey"], ""))
 
     with ck.open(PWD, ckeys_db) as s2:
@@ -178,29 +178,29 @@ def test_bluekeys() -> tuple[int, int]:
 
     # -- extension-level --
     c.assert_raise("purplekeys rejects .keys extension",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: crx.keyx.purplekeys.open(PWD, keys_db))
     c.assert_raise("keys rejects .purple extension",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: bk.open(PWD, pk_db))
     c.assert_raise("keys rejects .ckeys extension",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: bk.open(PWD, ckeys_db))
     c.assert_raise("ckeys rejects .keys extension",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: ck.open(PWD, keys_db))
 
     # -- magic-level (spoofed extension) --
     spoof = tmp / "spoof.keys"
     shutil.copy(ckeys_db, spoof)
     c.assert_raise("keys rejects spoofed .ckeys-as-.keys (magic mismatch)",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: bk.open(PWD, spoof))
 
     spoof2 = tmp / "spoof.purple"
     shutil.copy(keys_db, spoof2)
     c.assert_raise("purplekeys rejects spoofed .keys-as-.purple (magic mismatch)",
-                   crx.KeystoreError,
+                   crx.KeyxError,
                    lambda: crx.keyx.purplekeys.open(PWD, spoof2))
 
     # ===================== End-to-end with BLUE =====================

@@ -46,7 +46,7 @@ pip install pycryptox
 
 ## Tests
 
-🧪 [Test suite](pycryptox/tests/) — 162 tests covering all protocols and keystores.
+🧪 [Test suite](pycryptox/tests/) — 162 tests covering all protocols and Keyx.
 
 ```bash
 cd pycryptox/tests

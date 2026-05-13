@@ -30,12 +30,12 @@ _REQUIRED_FIELDS = frozenset({"mygpubkey", "hgpubkey", "cprivkey"})
 
 def _validate_entry(entry: dict[str, str]) -> None:
     if set(entry.keys()) != _REQUIRED_FIELDS:
-        raise KeystoreError("entry must have fields: mygpubkey, hgpubkey, cprivkey")
+        raise KeyxError("entry must have fields: mygpubkey, hgpubkey, cprivkey")
     for k, v in entry.items():
         if not isinstance(v, str):
             raise ArgumentTypeError(k, type(v))
         if v == "":
-            raise KeystoreError(f"field '{k}' must not be empty")
+            raise KeyxError(f"field '{k}' must not be empty")
 
 
 # Classes:
@@ -199,7 +199,7 @@ class _CKeysSession:
 
     def _check_open(self) -> None:
         if self._closed:
-            raise KeystoreError("session is closed")
+            raise KeyxError("session is closed")
 
 
 # -- Main functions: --
@@ -212,20 +212,20 @@ __all__ = [
 
 
 def createdb(password: str, dbpath: str | os.PathLike) -> None:
-    """Create a new empty keystore at `dbpath`, encrypted with `password`."""
+    """Create a new empty Keyx at `dbpath`, encrypted with `password`."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
     dbpath = Path(dbpath)
     _common._validate_extension(dbpath, _REQUIRED_EXTENSION)
     if dbpath.exists():
-        raise KeystoreError(f"database already exists at '{dbpath}'")
+        raise KeyxError(f"database already exists at '{dbpath}'")
     head_ct = _common._make_head(password)
     payload_ct = _common._make_payload(password, {}, _FORMAT_TAG, _FORMAT_VERSION)
     _common._write_layout(dbpath, _MAGIC, head_ct, payload_ct)
 
 
 def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = True) -> None:
-    """Destroy the keystore at `dbpath`.\n
+    """Destroy the Keyx at `dbpath`.\n
     By default verifies `password` first. Set `passwordrequired=False`\n
     to delete unconditionally (useful for corrupted stores).\n
     NOTE: on SSDs, overwriting before deletion is best-effort only due\n
@@ -235,7 +235,7 @@ def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = T
     dbpath = Path(dbpath)
     _common._validate_extension(dbpath, _REQUIRED_EXTENSION)
     if not dbpath.exists():
-        raise KeystoreError(f"database not found at '{dbpath}'")
+        raise KeyxError(f"database not found at '{dbpath}'")
     if passwordrequired:
         head_ct, _ = _common._read_layout(dbpath, _MAGIC)
         try:
@@ -254,7 +254,7 @@ def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = T
 
 
 def verify(password: str, dbpath: str | os.PathLike) -> bool:
-    """Return True if `password` decrypts the keystore head."""
+    """Return True if `password` decrypts the Keyx head."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
     dbpath = Path(dbpath)
@@ -268,7 +268,7 @@ def verify(password: str, dbpath: str | os.PathLike) -> bool:
 
 
 def open(password: str, dbpath: str | os.PathLike) -> _CKeysSession:
-    """Open a keystore session. Use as a context manager:\n
+    """Open a Keyx session. Use as a context manager:\n
     ```python
     with crx.keyx.bluekeys.ckeys.open(password, dbpath) as s:
         s.add("alice", mygpubkey, hgpubkey, cprivkey)
@@ -286,6 +286,6 @@ def open(password: str, dbpath: str | os.PathLike) -> _CKeysSession:
     try:
         payload_str = purple.decrypt(_common._PURPLE_VERSION, password, payload_ct)
     except DecryptionError:
-        raise KeystoreError("payload corrupted or tampered")
+        raise KeyxError("payload corrupted or tampered")
     entries = _common._parse_payload(payload_str, _FORMAT_TAG, _REQUIRED_FIELDS)
     return _CKeysSession(password, dbpath, entries)

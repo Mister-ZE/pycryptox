@@ -11,7 +11,7 @@ Pycryptox depends on four external libraries:
 | `liboqs-python` | Python wrapper for liboqs (ML-KEM-512) | All asymmetric operations (BLACK, BLUE, RED) |
 | `cryptography` | ChaCha20-Poly1305 (AEAD) | Symmetric encryption in all protocols |
 | `argon2-cffi` | Argon2id (KDF) | Password-based key derivation (PURPLE, keyx) |
-| `rapidfuzz` | Fuzzy search | `search()` function in keystores (keyx) |
+| `rapidfuzz` | Fuzzy search | `search()` function in Keyx (keyx) |
 
 The `liboqs-python` dependency is the only one that requires a specific preparation step, because it relies on the C `liboqs` library to perform ML-KEM-512 operations. This C library is compiled automatically on the first `import oqs` if it is not already installed on the system.
 

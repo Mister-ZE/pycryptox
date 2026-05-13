@@ -246,7 +246,7 @@ except crx.WrongPasswordError:
 with crx.keyx.purplekeys.open("new-master", "secrets.purple") as s:
     s.backup("secrets.backup.purple")
 
-# The backup is a valid keystore
+# The backup is a valid Keyx
 with crx.keyx.purplekeys.open("new-master", "secrets.backup.purple") as s:
     print(s.listallnames())
 ```
@@ -271,7 +271,7 @@ with crx.keyx.purplekeys.open("new-master", "secrets.purple") as s:
     print("poison" in s)  # → False
 ```
 
-### Destroy a keystore
+### Destroy a Keyx
 
 ```python
 crx.keyx.purplekeys.destroy("new-master", "secrets.purple")
@@ -337,15 +337,15 @@ with crx.keyx.bluekeys.keys.open("master", "channels.keys") as s:
 bob_keys = crx.blue.genkeys("1")
 alice_gpubkey = "..."  # received from Alice
 
-# Bob creates two keystores: standard (machine) and critical (USB)
+# Bob creates two Keyx: standard (machine) and critical (USB)
 crx.keyx.bluekeys.keys.createdb("master", "channels.keys")
 crx.keyx.bluekeys.ckeys.createdb("master", "/usb/critical.ckeys")
 
-# yprivkey (decoy) → standard keystore
+# yprivkey (decoy) → standard Keyx
 with crx.keyx.bluekeys.keys.open("master", "channels.keys") as s:
     s.add("alice", bob_keys["gpubkey"], alice_gpubkey, bob_keys["yprivkey"])
 
-# xprivkey (real) → critical keystore on USB
+# xprivkey (real) → critical Keyx on USB
 with crx.keyx.bluekeys.ckeys.open("master", "/usb/critical.ckeys") as s:
     s.add("alice", bob_keys["gpubkey"], alice_gpubkey, bob_keys["xprivkey"])
 
@@ -360,7 +360,7 @@ with crx.keyx.bluekeys.ckeys.open("master", "/usb/critical.ckeys") as s:
     real = crx.blue.decrypt("1", entry["cprivkey"], bundle)
     print(real)  # → "Coordinates: 48.8566, 2.3522"
 
-# Under coercion: Bob opens the standard keystore (on his machine)
+# Under coercion: Bob opens the standard Keyx (on his machine)
 with crx.keyx.bluekeys.keys.open("master", "channels.keys") as s:
     entry = s.get("alice")
     decoy = crx.blue.decrypt("1", entry["privkey"], bundle)
@@ -392,17 +392,17 @@ except crx.ArgumentTypeError:
     print("Invalid argument type")
 ```
 
-### Keystore errors
+### Keyx errors
 
 ```python
 try:
     crx.keyx.purplekeys.open("pwd", "nonexistent.purple")
-except crx.KeystoreError:
+except crx.KeyxError:
     print("File not found or corrupted")
 
 try:
     crx.keyx.purplekeys.createdb("pwd", "file.txt")  # wrong extension
-except crx.KeystoreError:
+except crx.KeyxError:
     print("The extension must be .purple")
 ```
 
@@ -426,12 +426,12 @@ crx.keyx.bluekeys.ckeys.createdb("pwd", "c.ckeys")
 # Each module refuses files of the others
 try:
     crx.keyx.purplekeys.open("pwd", "k.keys")  # extension .keys ≠ .purple
-except crx.KeystoreError:
+except crx.KeyxError:
     print("purplekeys refuses a .keys file")
 
 try:
     crx.keyx.bluekeys.keys.open("pwd", "c.ckeys")  # extension .ckeys ≠ .keys
-except crx.KeystoreError:
+except crx.KeyxError:
     print("bluekeys.keys refuses a .ckeys file")
 
 # Even with a renamed extension, the magic bytes reject
@@ -439,6 +439,6 @@ import shutil
 shutil.copy("k.keys", "spoofed.purple")
 try:
     crx.keyx.purplekeys.open("pwd", "spoofed.purple")
-except crx.KeystoreError:
+except crx.KeyxError:
     print("Incompatible magic bytes — double protection")
 ```

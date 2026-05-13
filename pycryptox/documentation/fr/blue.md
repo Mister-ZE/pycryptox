@@ -43,12 +43,12 @@ Alice veut envoyer un message confidentiel à Bob. Elle sait qu'un adversaire po
 
 1. Alice génère un trousseau BLUE : `gpubkey`, `xprivkey`, `yprivkey`.
 2. Elle chiffre le vrai message sur le canal x et un leurre crédible sur le canal y.
-3. Elle stocke `yprivkey` (la clé leurre) dans son keystore principal (`keyx.bluekeys.keys`, sur sa machine).
-4. Elle stocke `xprivkey` (la vraie clé) dans un keystore séparé (`keyx.bluekeys.ckeys`, sur une clé USB qu'elle garde ailleurs).
+3. Elle stocke `yprivkey` (la clé leurre) dans son Keyx principal (`keyx.bluekeys.keys`, sur sa machine).
+4. Elle stocke `xprivkey` (la vraie clé) dans un Keyx séparé (`keyx.bluekeys.ckeys`, sur une clé USB qu'elle garde ailleurs).
 
 ### Scénario de coercition
 
-Un adversaire contraint Alice à ouvrir son keystore. Alice ouvre `channels.keys`, qui contient `yprivkey`. L'adversaire déchiffre le bundle et obtient le leurre. Il ne peut pas prouver que le canal x existe : le bundle qu'il voit est un blob opaque, et `yprivkey` produit un message crédible.
+Un adversaire contraint Alice à ouvrir son Keyx. Alice ouvre `channels.keys`, qui contient `yprivkey`. L'adversaire déchiffre le bundle et obtient le leurre. Il ne peut pas prouver que le canal x existe : le bundle qu'il voit est un blob opaque, et `yprivkey` produit un message crédible.
 
 La clé USB contenant `xprivkey` est physiquement absente. L'adversaire ne sait même pas qu'elle existe.
 
@@ -211,7 +211,7 @@ Les clés chimiques contiennent les positions (indices dans `mixmsg`) des octets
 
 **Crédibilité du leurre** : la déniabilité est inutile si le message leurre n'est pas crédible. Un leurre vide ou absurde ("test", "rien") ne convaincra personne. Le leurre doit ressembler à un vrai message que l'utilisateur aurait raisonnablement envoyé.
 
-**Séparation physique des clés** : la déniabilité suppose que l'adversaire n'a accès qu'à une seule clé privée. Si les deux clés (`xprivkey` et `yprivkey`) sont stockées au même endroit, l'adversaire les trouve toutes les deux et la déniabilité est nulle. Le système keyx fournit deux keystores séparés (`keys` et `ckeys`) exactement pour cette raison.
+**Séparation physique des clés** : la déniabilité suppose que l'adversaire n'a accès qu'à une seule clé privée. Si les deux clés (`xprivkey` et `yprivkey`) sont stockées au même endroit, l'adversaire les trouve toutes les deux et la déniabilité est nulle. Le système keyx fournit deux Keyx séparés (`keys` et `ckeys`) exactement pour cette raison.
 
 **Métadonnées non protégées** : BLUE protège le contenu des messages, pas les métadonnées. L'heure d'envoi, la fréquence des échanges, l'identité de l'expéditeur et du destinataire ne sont pas dissimulées par BLUE. Pour masquer ces métadonnées, une couche supplémentaire (réseau anonyme, stéganographie via YELLOW) est nécessaire.
 

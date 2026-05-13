@@ -24,7 +24,7 @@ _PURPLE_VERSION = "1"
 
 def _validate_extension(dbpath: Path, expected_ext: str) -> None:
     if dbpath.suffix != expected_ext:
-        raise KeystoreError(f"path must end with '{expected_ext}'")
+        raise KeyxError(f"path must end with '{expected_ext}'")
 
 
 def _atomic_write(dbpath: Path, data: bytes) -> None:
@@ -46,14 +46,14 @@ def _atomic_write(dbpath: Path, data: bytes) -> None:
 
 def _read_layout(dbpath: Path, expected_magic: bytes) -> tuple[str, str]:
     if not dbpath.exists():
-        raise KeystoreError(f"database not found at '{dbpath}'")
+        raise KeyxError(f"database not found at '{dbpath}'")
     with builtins.open(dbpath, "rb") as f:
         data = f.read()
     if len(data) < 20 or data[:16] != expected_magic:
-        raise KeystoreError("invalid or corrupted database")
+        raise KeyxError("invalid or corrupted database")
     head_len = struct.unpack(">I", data[16:20])[0]
     if 20 + head_len > len(data):
-        raise KeystoreError("invalid or corrupted database")
+        raise KeyxError("invalid or corrupted database")
     head_ct = data[20:20 + head_len].decode("ascii")
     payload_ct = data[20 + head_len:].decode("ascii")
     return head_ct, payload_ct
@@ -63,7 +63,7 @@ def _write_layout(dbpath: Path, magic: bytes, head_ct: str, payload_ct: str) -> 
     head_bytes = head_ct.encode("ascii")
     payload_bytes = payload_ct.encode("ascii")
     if len(head_bytes) > 0xFFFFFFFF:
-        raise KeystoreError("head too large")
+        raise KeyxError("head too large")
     data = magic + struct.pack(">I", len(head_bytes)) + head_bytes + payload_bytes
     _atomic_write(dbpath, data)
 
@@ -90,19 +90,19 @@ def _parse_payload(
     try:
         obj = json.loads(payload_str)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     if not isinstance(obj, dict) or obj.get("format") != format_tag:
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     entries = obj.get("entries")
     if not isinstance(entries, dict):
-        raise KeystoreError("corrupted payload")
+        raise KeyxError("corrupted payload")
     for k, v in entries.items():
         if not isinstance(k, str) or not isinstance(v, dict):
-            raise KeystoreError("corrupted payload")
+            raise KeyxError("corrupted payload")
         if set(v.keys()) != required_fields:
-            raise KeystoreError("corrupted payload")
+            raise KeyxError("corrupted payload")
         if not all(isinstance(x, str) for x in v.values()):
-            raise KeystoreError("corrupted payload")
+            raise KeyxError("corrupted payload")
     return entries
 
 

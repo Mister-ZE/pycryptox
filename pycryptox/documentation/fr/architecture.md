@@ -51,14 +51,14 @@ crx.blue            # Protocole BLUE
 crx.red             # Protocole RED
 crx.yellow          # Protocole YELLOW
 
-crx.keyx.purplekeys             # Keystore PURPLE
-crx.keyx.bluekeys.keys          # Keystore BLUE standard
-crx.keyx.bluekeys.ckeys         # Keystore BLUE critique
+crx.keyx.purplekeys             # Keyx PURPLE
+crx.keyx.bluekeys.keys          # Keyx BLUE standard
+crx.keyx.bluekeys.ckeys         # Keyx BLUE critique
 
 crx.PycryptoxError                # Exception de base
 crx.DecryptionError             # Échec de déchiffrement
 crx.EncryptionError             # Échec de chiffrement
-crx.KeystoreError               # Erreur de keystore
+crx.KeyxError               # Erreur de Keyx
 # ... etc.
 ```
 

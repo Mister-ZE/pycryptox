@@ -121,7 +121,7 @@ Extracts the version of a bundle without decrypting it.
 
 **Encryption of backups**: encrypt a database export before storing it on a cloud. The passphrase is written on paper in a physical safe.
 
-**Keystores**: PURPLE is the protocol used internally by all keyx keystores (purplekeys, bluekeys.keys, bluekeys.ckeys) to encrypt the `.purple`, `.keys`, and `.ckeys` files.
+**Keyxs**: PURPLE is the protocol used internally by all keyx Keyx (purplekeys, bluekeys.keys, bluekeys.ckeys) to encrypt the `.purple`, `.keys`, and `.ckeys` files.
 
 
 ## Complete example

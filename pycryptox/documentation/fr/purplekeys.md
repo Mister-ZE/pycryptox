@@ -1,6 +1,6 @@
 # keyx.purplekeys
 
-`purplekeys` est un gestionnaire de clés chiffrées pour stocker des paires nom/clé (chaînes de caractères). Le fichier keystore est chiffré intégralement avec le protocole PURPLE. Sans le mot de passe maître, le contenu est illisible.
+`purplekeys` est un gestionnaire de clés chiffrées pour stocker des paires nom/clé (chaînes de caractères). Le fichier Keyx est chiffré intégralement avec le protocole PURPLE. Sans le mot de passe maître, le contenu est illisible.
 
 
 ## Cas d'usage
@@ -18,7 +18,7 @@ L'extension obligatoire est **`.purple`**. Le fichier binaire a la structure :
 [16 octets : magic]  [4 octets : head_len (BE32)]  [head_ct]  [payload_ct]
 ```
 
-- **Magic** : `CRXKX_PURPLE_V1\x00` (16 octets). Identifie le type de keystore.
+- **Magic** : `CRXKX_PURPLE_V1\x00` (16 octets). Identifie le type de Keyx.
 - **head_ct** : blob aléatoire chiffré avec PURPLE. Sert uniquement à vérifier le mot de passe sans lire le payload.
 - **payload_ct** : JSON sérialisé chiffré avec PURPLE. Contient les entrées.
 
@@ -33,7 +33,7 @@ Les écritures sont **atomiques** : le fichier est écrit dans un fichier tempor
 
 #### `crx.keyx.purplekeys.createdb(password, dbpath) -> None`
 
-Crée un nouveau keystore vide.
+Crée un nouveau Keyx vide.
 
 | Paramètre | Type | Description |
 |---|---|---|
@@ -43,13 +43,13 @@ Crée un nouveau keystore vide.
 Les répertoires parents sont créés automatiquement s'ils n'existent pas.
 
 **Exceptions** :
-- `KeystoreError` — si le fichier existe déjà, ou si l'extension n'est pas `.purple`.
+- `KeyxError` — si le fichier existe déjà, ou si l'extension n'est pas `.purple`.
 - `ArgumentTypeError` — si `password` n'est pas un `str`.
 
 
 #### `crx.keyx.purplekeys.open(password, dbpath) -> _PurpleSession`
 
-Ouvre un keystore existant et retourne une session.
+Ouvre un Keyx existant et retourne une session.
 
 | Paramètre | Type | Description |
 |---|---|---|
@@ -59,7 +59,7 @@ Ouvre un keystore existant et retourne une session.
 
 **Exceptions** :
 - `WrongPasswordError` — si le mot de passe est incorrect.
-- `KeystoreError` — si le fichier est introuvable, corrompu, ou a un magic invalide.
+- `KeyxError` — si le fichier est introuvable, corrompu, ou a un magic invalide.
 - `ArgumentTypeError` — si `password` n'est pas un `str`.
 
 Utilisation recommandée avec `with` :
@@ -77,7 +77,7 @@ with crx.keyx.purplekeys.open("master-pwd", "store.purple") as s:
 
 #### `crx.keyx.purplekeys.verify(password, dbpath) -> bool`
 
-Vérifie si un mot de passe est correct pour un keystore donné, sans l'ouvrir.
+Vérifie si un mot de passe est correct pour un Keyx donné, sans l'ouvrir.
 
 | Paramètre | Type | Description |
 |---|---|---|
@@ -85,12 +85,12 @@ Vérifie si un mot de passe est correct pour un keystore donné, sans l'ouvrir.
 | `dbpath` | `str \| Path` | Chemin du fichier `.purple`. |
 | **Retour** | `bool` | `True` si le mot de passe est correct, `False` sinon. |
 
-`verify` retourne un booléen uniquement pour la question "est-ce le bon mot de passe ?". Si le fichier est introuvable, corrompu, ou a un magic invalide, une `KeystoreError` est levée (pas `False`).
+`verify` retourne un booléen uniquement pour la question "est-ce le bon mot de passe ?". Si le fichier est introuvable, corrompu, ou a un magic invalide, une `KeyxError` est levée (pas `False`).
 
 
 #### `crx.keyx.purplekeys.destroy(password, dbpath, passwordrequired=True) -> None`
 
-Supprime définitivement un keystore.
+Supprime définitivement un Keyx.
 
 | Paramètre | Type | Description |
 |---|---|---|
@@ -100,12 +100,12 @@ Supprime définitivement un keystore.
 
 **Exceptions** :
 - `WrongPasswordError` — si le mot de passe est incorrect (et `passwordrequired=True`).
-- `KeystoreError` — si le fichier est introuvable.
+- `KeyxError` — si le fichier est introuvable.
 
 
 ### Méthodes de session
 
-Une session est obtenue via `open()`. Toutes les méthodes ci-dessous lèvent `KeystoreError` si la session a été fermée.
+Une session est obtenue via `open()`. Toutes les méthodes ci-dessous lèvent `KeyxError` si la session a été fermée.
 
 #### `session.add(name, key) -> None`
 
@@ -122,7 +122,7 @@ Retourne la clé associée à `name`. Lève `KeyNameError` si `name` n'existe pa
 
 #### `session.exists(name) -> bool`
 
-Retourne `True` si `name` existe dans le keystore.
+Retourne `True` si `name` existe dans le Keyx.
 
 #### `session.__contains__(name) -> bool`
 
@@ -144,7 +144,7 @@ La recherche utilise `rapidfuzz` avec des bonus pour les correspondances de pré
 
 #### `session.getdb() -> dict[str, str]`
 
-Retourne une copie de l'intégralité des entrées sous forme `{name: key, ...}`. Le dictionnaire retourné est indépendant de la session : le modifier ne change rien au keystore.
+Retourne une copie de l'intégralité des entrées sous forme `{name: key, ...}`. Le dictionnaire retourné est indépendant de la session : le modifier ne change rien au Keyx.
 
 #### `session.update(name, new_key) -> None`
 
@@ -160,13 +160,13 @@ Supprime une entrée. Lève `KeyNameError` si `name` n'existe pas.
 
 #### `session.changepwd(old_password, new_password) -> None`
 
-Change le mot de passe maître du keystore. Lève `WrongPasswordError` si `old_password` est incorrect.
+Change le mot de passe maître du Keyx. Lève `WrongPasswordError` si `old_password` est incorrect.
 
 Le changement de mot de passe prend effet immédiatement dans le fichier (pas besoin de `close` ou de sortir du `with`). Le nouveau mot de passe sera utilisé lors du prochain commit (à la sortie du `with` ou à l'appel de `close`).
 
 #### `session.backup(target_path) -> None`
 
-Crée une copie du keystore dans son état actuel (y compris les modifications non encore commitées). Le fichier de backup est un keystore valide, ouvrable avec le même mot de passe. `target_path` doit se terminer par `.purple`.
+Crée une copie du Keyx dans son état actuel (y compris les modifications non encore commitées). Le fichier de backup est un Keyx valide, ouvrable avec le même mot de passe. `target_path` doit se terminer par `.purple`.
 
 #### `session.close(commit=True) -> None`
 

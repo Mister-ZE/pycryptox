@@ -12,16 +12,16 @@ Both sub-modules have the same API except for three details: the file extension,
 
 The separation between `keys` and `ckeys` serves the **plausible deniability** of the BLUE protocol.
 
-In a deniability scenario, the user holds two private keys for each channel: a decoy key and a real key. The decoy key is stored in the `keys` keystore, accessible on the user's machine. Why store the decoy in the main keystore? Because that is the keystore the adversary will force the user to open under coercion. The adversary will find the decoy key there, decrypt the decoy message, and obtain a credible result — without knowing that another key exists elsewhere.
+In a deniability scenario, the user holds two private keys for each channel: a decoy key and a real key. The decoy key is stored in the `keys` Keyx, accessible on the user's machine. Why store the decoy in the main Keyx? Because that is the Keyx the adversary will force the user to open under coercion. The adversary will find the decoy key there, decrypt the decoy message, and obtain a credible result — without knowing that another key exists elsewhere.
 
-The real key is stored in the `ckeys` keystore, on a physically separate medium (USB drive, external disk, etc.) that is not present at the moment of coercion. The adversary cannot force the opening of a file whose existence they ignore and which is physically absent.
+The real key is stored in the `ckeys` Keyx, on a physically separate medium (USB drive, external disk, etc.) that is not present at the moment of coercion. The adversary cannot force the opening of a file whose existence they ignore and which is physically absent.
 
 The library provides both stores. Management of the physical medium (USB, file separation) is the responsibility of the user or the CLI software.
 
 
 ## Entry schema
 
-Each entry in a bluekeys keystore represents a **correspondence channel** (not a person). The user freely chooses the name of each channel.
+Each entry in a bluekeys Keyx represents a **correspondence channel** (not a person). The user freely chooses the name of each channel.
 
 ### `keys` — fields per entry
 
@@ -69,7 +69,7 @@ The API is identical between `keys` and `ckeys`. The examples below use `keys`; 
 
 #### `createdb(password, dbpath) -> None`
 
-Creates a new empty keystore.
+Creates a new empty Keyx.
 
 ```python
 crx.keyx.bluekeys.keys.createdb("master-pwd", "channels.keys")
@@ -77,12 +77,12 @@ crx.keyx.bluekeys.ckeys.createdb("master-pwd", "/usb/critical.ckeys")
 ```
 
 **Exceptions**:
-- `KeystoreError` — if the file already exists or if the extension is incorrect.
+- `KeyxError` — if the file already exists or if the extension is incorrect.
 - `ArgumentTypeError` — if `password` is not a `str`.
 
 #### `open(password, dbpath) -> _KeysSession / _CKeysSession`
 
-Opens an existing keystore. Returns a session (context manager).
+Opens an existing Keyx. Returns a session (context manager).
 
 ```python
 with crx.keyx.bluekeys.keys.open("master-pwd", "channels.keys") as s:
@@ -91,20 +91,20 @@ with crx.keyx.bluekeys.keys.open("master-pwd", "channels.keys") as s:
 
 **Exceptions**:
 - `WrongPasswordError` — incorrect password.
-- `KeystoreError` — file not found, corrupted, invalid magic, or incorrect extension.
+- `KeyxError` — file not found, corrupted, invalid magic, or incorrect extension.
 
 #### `verify(password, dbpath) -> bool`
 
-Verifies the password without opening the keystore. `True` = correct, `False` = incorrect. Raises `KeystoreError` if the file is not a valid keystore of the right type.
+Verifies the password without opening the Keyx. `True` = correct, `False` = incorrect. Raises `KeyxError` if the file is not a valid Keyx of the right type.
 
 #### `destroy(password, dbpath, passwordrequired=True) -> None`
 
-Deletes the keystore. Raises `WrongPasswordError` if the password is wrong (unless `passwordrequired=False`).
+Deletes the Keyx. Raises `WrongPasswordError` if the password is wrong (unless `passwordrequired=False`).
 
 
 ### Session methods
 
-All methods raise `KeystoreError` if the session is closed.
+All methods raise `KeyxError` if the session is closed.
 
 #### `session.add(name, mygpubkey, hgpubkey, privkey) -> None`
 
@@ -114,12 +114,12 @@ Adds a channel. All fields are `str`, non-empty, mandatory.
 
 **Exceptions**:
 - `KeyNameError` — if `name` already exists or is empty.
-- `KeystoreError` — if a value is empty.
+- `KeyxError` — if a value is empty.
 - `ArgumentTypeError` — if an argument is not a `str`.
 
 #### `session.get(name) -> dict[str, str]`
 
-Returns a dictionary with the three fields of the entry. The returned dictionary is independent of the session: modifying it does not change the keystore.
+Returns a dictionary with the three fields of the entry. The returned dictionary is independent of the session: modifying it does not change the Keyx.
 
 ```python
 entry = s.get("alice")
@@ -137,7 +137,7 @@ Partial update: only the fields provided (non-`None`) are modified. Fields not p
 
 **Exceptions**:
 - `KeyNameError` — if `name` does not exist.
-- `KeystoreError` — if a provided value is empty.
+- `KeyxError` — if a provided value is empty.
 
 #### `session.exists(name) -> bool`
 
@@ -173,7 +173,7 @@ Changes the master password. Raises `WrongPasswordError` if the old password is 
 
 #### `session.backup(target_path) -> None`
 
-Creates a copy of the keystore. The extension of `target_path` must match the keystore type (`.keys` for keys, `.ckeys` for ckeys).
+Creates a copy of the Keyx. The extension of `target_path` must match the Keyx type (`.keys` for keys, `.ckeys` for ckeys).
 
 #### `session.close(commit=True) -> None`
 
@@ -185,6 +185,6 @@ Closes the session. `commit=True` = writes modifications. `commit=False` = aband
 A `.keys` file cannot be opened by `ckeys.open()` and vice versa. The check is performed at two levels:
 
 1. **Extension**: `keys` refuses anything that is not `.keys`, `ckeys` refuses anything that is not `.ckeys`.
-2. **Magic**: even if the extension is manually renamed, the 16-byte magic in the file header identifies the actual type. An incompatible magic raises `KeystoreError`.
+2. **Magic**: even if the extension is manually renamed, the 16-byte magic in the file header identifies the actual type. An incompatible magic raises `KeyxError`.
 
 Likewise, neither `keys` nor `ckeys` can open a `purplekeys` file (extension `.purple`, magic `CRXKX_PURPLE_V1\x00`), and conversely.

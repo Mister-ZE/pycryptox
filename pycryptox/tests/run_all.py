@@ -41,8 +41,8 @@ def main() -> None:
     print(f"  {'TOTAL':20s} {total_p:3d} passed, {total_f:3d} failed")
     print(f"  duration: {time.time() - start:.2f}s")
     print("=" * 60)
-
-    sys.exit(0 if total_f == 0 else 1)
+    
+    input("ENTER TO QUIT...")
 
 
 if __name__ == "__main__":

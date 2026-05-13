@@ -1,7 +1,7 @@
 # NOTE: in pycryptox_exceptions it is forbidden to import
 # modules, create functions, create global variables,
 # or anything else outside of the child classes of
-# PycryptoxError for the cleanliness of pycryptox_core.
+# PycryptoxError for the cleanliness of pycryptox.
 
 # Classes (And that's all):
 class PycryptoxError(Exception):
@@ -37,9 +37,9 @@ class UnstegaError(PycryptoxError):
         message = f"Error during unstega because '{reason}'"
         super().__init__(message)
 
-class KeystoreError(PycryptoxError):
+class KeyxError(PycryptoxError):
     def __init__(self, reason="Unknown reason"):
-        message = f"Error with keystore because '{reason}'"
+        message = f"Error with Keyx because '{reason}'"
         super().__init__(message)
  
 class KeyNameError(PycryptoxError):

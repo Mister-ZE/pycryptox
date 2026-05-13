@@ -1,6 +1,6 @@
 # keyx.purplekeys
 
-`purplekeys` is an encrypted key manager for storing name/key pairs (strings). The keystore file is fully encrypted with the PURPLE protocol. Without the master password, the contents are unreadable.
+`purplekeys` is an encrypted key manager for storing name/key pairs (strings). The Keyx file is fully encrypted with the PURPLE protocol. Without the master password, the contents are unreadable.
 
 
 ## Use cases
@@ -18,7 +18,7 @@ The mandatory extension is **`.purple`**. The binary file has the structure:
 [16 bytes: magic]  [4 bytes: head_len (BE32)]  [head_ct]  [payload_ct]
 ```
 
-- **Magic**: `CRXKX_PURPLE_V1\x00` (16 bytes). Identifies the keystore type.
+- **Magic**: `CRXKX_PURPLE_V1\x00` (16 bytes). Identifies the Keyx type.
 - **head_ct**: random blob encrypted with PURPLE. Used only to verify the password without reading the payload.
 - **payload_ct**: serialized JSON encrypted with PURPLE. Contains the entries.
 
@@ -33,7 +33,7 @@ Writes are **atomic**: the file is written to a temporary file then renamed. A p
 
 #### `crx.keyx.purplekeys.createdb(password, dbpath) -> None`
 
-Creates a new empty keystore.
+Creates a new empty Keyx.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -43,13 +43,13 @@ Creates a new empty keystore.
 Parent directories are created automatically if they do not exist.
 
 **Exceptions**:
-- `KeystoreError` — if the file already exists, or if the extension is not `.purple`.
+- `KeyxError` — if the file already exists, or if the extension is not `.purple`.
 - `ArgumentTypeError` — if `password` is not a `str`.
 
 
 #### `crx.keyx.purplekeys.open(password, dbpath) -> _PurpleSession`
 
-Opens an existing keystore and returns a session.
+Opens an existing Keyx and returns a session.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -59,7 +59,7 @@ Opens an existing keystore and returns a session.
 
 **Exceptions**:
 - `WrongPasswordError` — if the password is incorrect.
-- `KeystoreError` — if the file is not found, corrupted, or has an invalid magic.
+- `KeyxError` — if the file is not found, corrupted, or has an invalid magic.
 - `ArgumentTypeError` — if `password` is not a `str`.
 
 Recommended usage with `with`:
@@ -77,7 +77,7 @@ On exit from the `with`:
 
 #### `crx.keyx.purplekeys.verify(password, dbpath) -> bool`
 
-Verifies whether a password is correct for a given keystore, without opening it.
+Verifies whether a password is correct for a given Keyx, without opening it.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -85,12 +85,12 @@ Verifies whether a password is correct for a given keystore, without opening it.
 | `dbpath` | `str \| Path` | Path to the `.purple` file. |
 | **Return** | `bool` | `True` if the password is correct, `False` otherwise. |
 
-`verify` returns a boolean only for the question "is this the right password?". If the file is not found, corrupted, or has an invalid magic, a `KeystoreError` is raised (not `False`).
+`verify` returns a boolean only for the question "is this the right password?". If the file is not found, corrupted, or has an invalid magic, a `KeyxError` is raised (not `False`).
 
 
 #### `crx.keyx.purplekeys.destroy(password, dbpath, passwordrequired=True) -> None`
 
-Permanently deletes a keystore.
+Permanently deletes a Keyx.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -100,12 +100,12 @@ Permanently deletes a keystore.
 
 **Exceptions**:
 - `WrongPasswordError` — if the password is incorrect (and `passwordrequired=True`).
-- `KeystoreError` — if the file is not found.
+- `KeyxError` — if the file is not found.
 
 
 ### Session methods
 
-A session is obtained via `open()`. All methods below raise `KeystoreError` if the session has been closed.
+A session is obtained via `open()`. All methods below raise `KeyxError` if the session has been closed.
 
 #### `session.add(name, key) -> None`
 
@@ -122,7 +122,7 @@ Returns the key associated with `name`. Raises `KeyNameError` if `name` does not
 
 #### `session.exists(name) -> bool`
 
-Returns `True` if `name` exists in the keystore.
+Returns `True` if `name` exists in the Keyx.
 
 #### `session.__contains__(name) -> bool`
 
@@ -144,7 +144,7 @@ The search uses `rapidfuzz` with bonuses for prefix matches, substring matches, 
 
 #### `session.getdb() -> dict[str, str]`
 
-Returns a copy of all entries as `{name: key, ...}`. The returned dictionary is independent of the session: modifying it does not change the keystore.
+Returns a copy of all entries as `{name: key, ...}`. The returned dictionary is independent of the session: modifying it does not change the Keyx.
 
 #### `session.update(name, new_key) -> None`
 
@@ -160,13 +160,13 @@ Deletes an entry. Raises `KeyNameError` if `name` does not exist.
 
 #### `session.changepwd(old_password, new_password) -> None`
 
-Changes the keystore's master password. Raises `WrongPasswordError` if `old_password` is incorrect.
+Changes the Keyx's master password. Raises `WrongPasswordError` if `old_password` is incorrect.
 
 The password change takes effect immediately in the file (no need for `close` or to exit the `with`). The new password will be used at the next commit (when exiting the `with` or calling `close`).
 
 #### `session.backup(target_path) -> None`
 
-Creates a copy of the keystore in its current state (including modifications not yet committed). The backup file is a valid keystore, openable with the same password. `target_path` must end with `.purple`.
+Creates a copy of the Keyx in its current state (including modifications not yet committed). The backup file is a valid Keyx, openable with the same password. `target_path` must end with `.purple`.
 
 #### `session.close(commit=True) -> None`
 
