@@ -42,7 +42,7 @@ def main() -> None:
     print(f"  duration: {time.time() - start:.2f}s")
     print("=" * 60)
     
-    input("ENTER TO QUIT...")
+    sys.exit(1 if total_f > 0 else 0)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 @"
 __pycache__/
+release.py
 *.pyc
 *.pyo
 dist/
