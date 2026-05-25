@@ -63,7 +63,7 @@ Possible causes (non-exhaustive):
 - Bundle version incompatible with the requested version.
 - Invalid base64 bundle.
 - Insufficient or invalid RED shares.
-- Invalid BLUE chemical key.
+- Invalid BLUE chemkey (v1.0 only).
 
 By design, a wrong password and a corrupted message produce the same exception with the same message type. The caller cannot distinguish these cases, which is a security choice.
 
@@ -78,7 +78,7 @@ Possible causes:
 - Invalid public key (incorrect size, malformed base64).
 - Invalid RED threshold parameters.
 - BLUE messages in different buckets.
-- BLUE message too large (> 1 MB).
+- BLUE message too large (> 1 MB in v1.0, > 1 GiB in v2.0).
 
 
 ### `StegaError`

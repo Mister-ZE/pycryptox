@@ -49,9 +49,11 @@ Pycryptox n'implémente pas de forward secrecy (secret de transmission). Si la c
 
 **Déniabilité conditionnelle** : la déniabilité de BLUE est cryptographique (le bundle ne trahit pas l'existence de deux canaux — voir la section dédiée dans la documentation de [BLUE](blue.md)), mais elle dépend du comportement de l'utilisateur. Si les deux clés privées sont stockées au même endroit, la déniabilité est nulle. La séparation physique des clés est nécessaire.
 
-**Oracle de déchiffrement** : le bruit dans le bundle BLUE n'est pas authentifié. Un attaquant qui peut soumettre des bundles modifiés et observer si le déchiffrement réussit ou échoue pourrait cartographier les positions des clés chimiques. Les applications doivent éviter d'exposer le statut succès/échec à des parties non authentifiées.
+**Crédibilité du leurre (opérationnel)** : BLUE rend les deux canaux cryptographiquement indistinguables, mais il ne peut garantir que le contenu du canal y soit *crédible*. Un message y vide ou absurde annihile la déniabilité, peu importe ce que fait la cryptographie. La crédibilité du leurre relève de la couche applicative.
 
-**Taille maximale** : les messages BLUE sont limités à 1 Mo en v1.0.
+**Taille maximale** : en v2.0, BLUE plafonne chaque slot à **1 Gio** avec 8 buckets de padding fixes (4 Ko, 16 Ko, 64 Ko, 256 Ko, 1 Mo, 16 Mo, 256 Mo, 1 Gio). À l'approche du plafond, la consommation RAM peut atteindre ~7–9 Gio ; les utilisateurs avec peu de mémoire devraient rester nettement en deçà. En v1.0 (legacy, gelée), le plafond est de 1 Mo.
+
+**Oracle hérité de v1.0** : les bundles v1.0 incluent une couche de bruit non authentifiée entre les blobs chemkey authentifiés. Un attaquant qui peut soumettre des bundles v1.0 modifiés et observer succès/échec peut cartographier les positions des chemkeys, compromettant partiellement l'identification de slot. v2.0 supprime entièrement la couche de bruit (le bundle est `[order_flag][len][enc_x][enc_y]`, les deux authentifiés AEAD), éliminant cet oracle. Les nouveaux déploiements devraient utiliser v2.0.
 
 ### RED
 

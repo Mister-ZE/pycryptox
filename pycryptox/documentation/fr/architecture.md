@@ -75,7 +75,7 @@ BLACK (interne, jamais appelé directement)
 
 BLUE → utilise BLACK
    Génère deux sous-clés (x, y) via BLACK
-   Mélange les ciphertexts avec du bruit (chemical key mixing)
+   Padding des deux slots à un bucket commun, ordre aléatoire
    Offre la déniabilité plausible
 
 RED → utilise BLACK
