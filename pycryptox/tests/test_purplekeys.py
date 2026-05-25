@@ -183,6 +183,61 @@ def test_purplekeys() -> tuple[int, int]:
         c.assert_eq("japanese name persists", lambda: su2.getkey("日本語"), "k2")
         c.assert_eq("emoji name persists", lambda: su2.getkey("emoji-🔑"), "k3")
 
+    # =============== levels (v3.0.0+) ===============
+    # -- createdb at each level, getlevel reads back --
+    for lvl in ("low", "normal", "strong", "extreme"):
+        lvl_db = tmp / f"lvl_{lvl}.purple"
+        pk.createdb(PWD, lvl_db, level=lvl)
+        with pk.open(PWD, lvl_db) as s:
+            c.assert_eq(f"createdb(level={lvl}) -> session.getlevel()",
+                        lambda s=s, lvl=lvl: s.getlevel(), lvl)
+
+    # -- default level is "strong" --
+    def_db = tmp / "default.purple"
+    pk.createdb(PWD, def_db)
+    with pk.open(PWD, def_db) as s:
+        c.assert_eq("default createdb level is 'strong'",
+                    lambda: s.getlevel(), "strong")
+
+    # -- changelevel persists across re-open --
+    cl_db = tmp / "changelevel.purple"
+    pk.createdb(PWD, cl_db, level="normal")
+    with pk.open(PWD, cl_db) as s:
+        s.add("k1", "v1")
+        s.changelevel("extreme")
+    with pk.open(PWD, cl_db) as s2:
+        c.assert_eq("changelevel persists after re-open",
+                    lambda: s2.getlevel(), "extreme")
+        c.assert_eq("changelevel preserves entries",
+                    lambda: s2.getkey("k1"), "v1")
+
+    # -- changelevel to unknown raises KeyxError --
+    cl2_db = tmp / "changelevel_bad.purple"
+    pk.createdb(PWD, cl2_db)
+    with pk.open(PWD, cl2_db) as s:
+        c.assert_raise("changelevel to unknown raises KeyxError",
+                       crx.KeyxError,
+                       lambda s=s: s.changelevel("godlike"))
+        c.assert_raise("changelevel non-str raises ArgumentTypeError",
+                       crx.ArgumentTypeError,
+                       lambda s=s: s.changelevel(42))
+
+    # -- changelevel to same value is idempotent (no _dirty bump) --
+    idem_db = tmp / "idem.purple"
+    pk.createdb(PWD, idem_db, level="strong")
+    with pk.open(PWD, idem_db) as s:
+        c.assert_eq("idempotent changelevel keeps level",
+                    lambda s=s: (s.changelevel("strong"), s.getlevel())[-1],
+                    "strong")
+
+    # -- createdb invalid level raises KeyxError --
+    c.assert_raise("createdb with unknown level raises KeyxError",
+                   crx.KeyxError,
+                   lambda: pk.createdb(PWD, tmp / "bad.purple", level="godlike"))
+    c.assert_raise("createdb non-str level raises ArgumentTypeError",
+                   crx.ArgumentTypeError,
+                   lambda: pk.createdb(PWD, tmp / "bad2.purple", level=2))
+
     shutil.rmtree(tmp, ignore_errors=True)
 
     p, f = c.summary()

@@ -31,7 +31,7 @@ Les écritures sont **atomiques** : le fichier est écrit dans un fichier tempor
 
 ### Fonctions de module
 
-#### `crx.keyx.purplekeys.createdb(password, dbpath) -> None`
+#### `crx.keyx.purplekeys.createdb(password, dbpath, level="strong") -> None`
 
 Crée un nouveau Keyx vide.
 
@@ -39,12 +39,13 @@ Crée un nouveau Keyx vide.
 |---|---|---|
 | `password` | `str` | Mot de passe maître. |
 | `dbpath` | `str \| Path` | Chemin du fichier. Doit se terminer par `.purple`. |
+| `level` | `str` | Force Argon2id. `"low"`, `"normal"`, `"strong"`, ou `"extreme"`. Défaut `"strong"`. |
 
-Les répertoires parents sont créés automatiquement s'ils n'existent pas.
+Les répertoires parents sont créés automatiquement s'ils n'existent pas. Le level est embarqué dans le fichier et lu automatiquement à l'`open()`.
 
 **Exceptions** :
-- `KeyxError` — si le fichier existe déjà, ou si l'extension n'est pas `.purple`.
-- `ArgumentTypeError` — si `password` n'est pas un `str`.
+- `KeyxError` — si le fichier existe déjà, si l'extension n'est pas `.purple`, ou si `level` est inconnu.
+- `ArgumentTypeError` — si `password` ou `level` n'est pas un `str`.
 
 
 #### `crx.keyx.purplekeys.open(password, dbpath) -> _PurpleSession`
@@ -59,8 +60,10 @@ Ouvre un Keyx existant et retourne une session.
 
 **Exceptions** :
 - `WrongPasswordError` — si le mot de passe est incorrect.
-- `KeyxError` — si le fichier est introuvable, corrompu, ou a un magic invalide.
+- `KeyxError` — si le fichier est introuvable, corrompu, a un magic invalide, ou a été créé par pycryptox < 3.0.0 (les fichiers keyx avec PURPLE v1.0 ne sont plus supportés ; voir *Migration depuis 2.x* en bas).
 - `ArgumentTypeError` — si `password` n'est pas un `str`.
+
+La session hérite du level Argon2id depuis le fichier. Utiliser `session.getlevel()` pour l'inspecter et `session.changelevel(new_level)` pour migrer vers un autre level au prochain save.
 
 Utilisation recommandée avec `with` :
 
@@ -164,12 +167,39 @@ Change le mot de passe maître du Keyx. Lève `WrongPasswordError` si `old_passw
 
 Le changement de mot de passe prend effet immédiatement dans le fichier (pas besoin de `close` ou de sortir du `with`). Le nouveau mot de passe sera utilisé lors du prochain commit (à la sortie du `with` ou à l'appel de `close`).
 
+#### `session.changelevel(new_level) -> None` *(nouveau en v3.0.0)*
+
+Change le level Argon2id pour les saves suivants. `new_level` doit être `"low"`, `"normal"`, `"strong"`, ou `"extreme"`.
+
+Le changement s'applique au prochain commit. Appeler `changelevel` avec la valeur actuelle est un no-op (la session n'est pas marquée dirty).
+
+**Exceptions** :
+- `ArgumentTypeError` — si `new_level` n'est pas un `str`.
+- `KeyxError` — si `new_level` n'est pas un nom de level reconnu.
+
+#### `session.getlevel() -> str` *(nouveau en v3.0.0)*
+
+Retourne le level Argon2id courant de la session (défini par `open()` à la lecture du fichier, ou modifié par `changelevel`).
+
 #### `session.backup(target_path) -> None`
 
-Crée une copie du Keyx dans son état actuel (y compris les modifications non encore commitées). Le fichier de backup est un Keyx valide, ouvrable avec le même mot de passe. `target_path` doit se terminer par `.purple`.
+Crée une copie du Keyx dans son état actuel (y compris les modifications non encore commitées). Le fichier de backup est un Keyx valide, ouvrable avec le même mot de passe et au level courant de la session. `target_path` doit se terminer par `.purple`.
 
 #### `session.close(commit=True) -> None`
 
 Ferme la session. Si `commit=True` (défaut), écrit les modifications dans le fichier. Si `commit=False`, abandonne les modifications.
 
 Appeler `close()` sur une session déjà fermée est un no-op (pas d'exception).
+
+
+## Migration depuis 2.x
+
+Pycryptox 3.0.0 hard-break la compatibilité avec les fichiers `.purple` créés par les releases 2.x. Raison : le protocole PURPLE sous-jacent a été upgradé de v1.0 à v2.0 pour introduire la force Argon2id ajustable. Les fichiers 2.x contiennent des bundles PURPLE v1.0, que 3.0.0 refuse d'ouvrir avec une erreur claire :
+
+```
+KeyxError: Error with Keyx because 'unsupported keyx PURPLE version v1.0;
+this build expects v2.x (created by pycryptox 3.0.0+)'
+```
+
+Un script de migration peut être écrit en utilisant un install pycryptox 2.x pour dumper les entrées, et un install 3.0.0+ pour recréer le Keyx. Il n'y a pas d'outil de migration in-place : garder un venv 2.x sous la main si tu as besoin de lire les anciens fichiers.
+

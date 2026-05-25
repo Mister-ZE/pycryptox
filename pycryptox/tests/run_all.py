@@ -9,6 +9,7 @@ from test_red import test_red
 from test_yellow import test_yellow
 from test_purplekeys import test_purplekeys
 from test_bluekeys import test_bluekeys
+from test_meta import test_meta
 
 
 def main() -> None:
@@ -22,6 +23,7 @@ def main() -> None:
         ("YELLOW", test_yellow),
         ("purplekeys", test_purplekeys),
         ("bluekeys", test_bluekeys),
+        ("meta", test_meta),
     ]:
         print()
         p, f = fn()

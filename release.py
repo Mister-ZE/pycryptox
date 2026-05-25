@@ -46,6 +46,12 @@ PACKAGE_INIT = PROJECT_ROOT / "pycryptox" / "__init__.py"
 TESTS_RUNNER = PROJECT_ROOT / "pycryptox" / "tests" / "run_all.py"
 DEFAULT_BRANCH = "main"   # change to "master" if your repo uses that
 
+# Expected GitHub remote. The release script soft-checks the configured `origin`
+# against this string and warns if it differs. Set to None to skip the check.
+GITHUB_OWNER = "cryptoxsystems"
+GITHUB_REPO = "pycryptox"
+EXPECTED_REMOTE_SUFFIX = f"{GITHUB_OWNER}/{GITHUB_REPO}"
+
 
 # ---------------------------------------------------------------------------
 # Pretty output helpers
@@ -232,6 +238,31 @@ def check_git_branch() -> None:
         info(f"On branch '{branch}'.")
 
 
+def check_git_remote() -> None:
+    """Soft-check the configured `origin` URL against EXPECTED_REMOTE_SUFFIX.
+    Warns if the remote does not look like the expected GitHub repository.
+    Useful after a GitHub repo transfer to catch a stale local remote URL."""
+    if EXPECTED_REMOTE_SUFFIX is None:
+        return
+    step("Checking git remote")
+    r = run("git remote get-url origin", capture=True, check=False)
+    if r.returncode != 0:
+        info("No 'origin' remote configured (skipping check).")
+        return
+    url = r.stdout.strip()
+    info(f"origin = {url}")
+    if EXPECTED_REMOTE_SUFFIX not in url:
+        print(f"  WARNING: 'origin' does not contain '{EXPECTED_REMOTE_SUFFIX}'.")
+        print(f"  Expected something ending in '{EXPECTED_REMOTE_SUFFIX}(.git)'.")
+        print(f"  If you transferred the repo, run:")
+        print(f"      git remote set-url origin git@github.com:{EXPECTED_REMOTE_SUFFIX}.git")
+        answer = input("  Continue anyway? [y/N]: ").strip().lower()
+        if answer != "y":
+            abort("Wrong remote.")
+    else:
+        info("Remote matches expected repository.")
+
+
 def run_tests() -> None:
     step("Running tests")
     if not TESTS_RUNNER.exists():
@@ -304,17 +335,28 @@ def main() -> None:
 
     check_git_clean()
     check_git_branch()
+    check_git_remote()
 
     current = read_version()
     new_version = ask_new_version(current)
-    if new_version == current:
-        abort(f"New version ({new_version}) is the same as current.")
+    is_same_version = (new_version == current)
+    if is_same_version:
+        info(f"New version {new_version!r} matches the current pyproject value.")
+        info("This is appropriate ONLY for the first-time publication of this")
+        info("version on PyPI. PyPI will reject the upload if this version was")
+        info("already published, and the release will fail mid-pipeline.")
+        answer = input("  Publish current version without bumping? [y/N]: ").strip().lower()
+        if answer != "y":
+            abort("User cancelled.")
     notes = ask_release_notes(new_version)
     confirm(new_version, notes)
 
     run_tests()
-    write_version(new_version)
-    commit_bump(new_version)
+    if not is_same_version:
+        write_version(new_version)
+        commit_bump(new_version)
+    else:
+        info("Skipping version bump (same as current); using existing HEAD as the release commit.")
     tag_and_push(new_version)
     clean_dist()
     build_package()
@@ -323,7 +365,7 @@ def main() -> None:
 
     header(f"Released v{new_version}")
     info(f"PyPI:   https://pypi.org/project/pycryptox/{new_version}/")
-    info(f"GitHub: gh release view v{new_version}  (or check the repo)")
+    info(f"GitHub: https://github.com/{EXPECTED_REMOTE_SUFFIX}/releases/tag/v{new_version}")
 
 
 if __name__ == "__main__":

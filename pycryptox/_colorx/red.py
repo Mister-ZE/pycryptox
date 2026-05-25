@@ -26,6 +26,7 @@ that no single party should be able to access alone.
 from typing import Any
 from .._exceptions._exceptions import *
 from . import _black as bk
+from . import _versioning as _ver
 import gc
 import secrets
 import base64
@@ -37,55 +38,6 @@ _GF_REDUCE = 0x1B        # _GF_PRIM_POLY & 0xFF
 
 
 # Functions:
-def _resolve_version(version: str, versions_dict: dict[str, Any]) -> str:
-    """Resolve a version specifier to an exact version string present in
-    `versions_dict`.\n
-    Accepts:\n
-    - Exact version like `"1.0"` → returned as-is if present.\n
-    - Major-only like `"1"` → returns the latest minor for that major.\n
-    Raises `VersionNotFoundError` if no match exists."""
-    if not isinstance(version, str):
-        raise ArgumentTypeError("version", type(version))
-
-    if version in versions_dict:
-        return version
-
-    if "." not in version:
-        try:
-            target_major = int(version)
-        except ValueError:
-            raise VersionNotFoundError(version)
-
-        candidates: list[tuple[int, int, str]] = []
-        for v in versions_dict.keys():
-            try:
-                major, minor = (int(x) for x in v.split("."))
-                if major == target_major:
-                    candidates.append((major, minor, v))
-            except ValueError:
-                continue
-
-        if not candidates:
-            raise VersionNotFoundError(version)
-
-        _, _, best = max(candidates, key=lambda t: (t[0], t[1]))
-        return best
-
-    raise VersionNotFoundError(version)
-
-
-def _matches_specifier(bundle_version: str, specifier: str) -> bool:
-    """Return True if `bundle_version` (an exact `"M.m"` string) is acceptable
-    under the user's `specifier` (which may be exact or major-only)."""
-    if "." in specifier:
-        return bundle_version == specifier
-    try:
-        target_major = int(specifier)
-        bundle_major = int(bundle_version.split(".")[0])
-    except (ValueError, IndexError):
-        return False
-    return bundle_major == target_major
-
 # GF(256) tables -- precomputed at module import.
 def _build_gf_tables() -> tuple[list[int], list[int]]:
     exp = [0] * 510
@@ -322,21 +274,10 @@ def encrypt(version: str, *args: Any, **kwargs: Any) -> str:
     On the wire, RED bundles are indistinguishable from BLACK bundles.
     The threshold property is enforced at decryption time via the shares.\n
     See docs for older versions."""
-
-    actual_version = _resolve_version(version, _ENCRYPT_VERSIONS)
+    actual_version = _ver._resolve_version(version, _ENCRYPT_VERSIONS)
     handler = _ENCRYPT_VERSIONS[actual_version]
-
-    try:
-        major, minor = (int(x) for x in actual_version.split("."))
-        if not (0 <= major <= 255 and 0 <= minor <= 255):
-            raise ValueError()
-    except ValueError:
-        raise EncryptionError(f"invalid version format: {actual_version}")
-
     inner_b64 = handler(*args, **kwargs)
-    inner = base64.urlsafe_b64decode(inner_b64)
-    versioned = bytes([major, minor]) + inner
-    return base64.urlsafe_b64encode(versioned).decode()
+    return _ver._wrap_version_bytes(actual_version, inner_b64)
 
 
 def decrypt(version: str, *args: Any, **kwargs: Any) -> str:
@@ -363,26 +304,10 @@ def decrypt(version: str, *args: Any, **kwargs: Any) -> str:
     else:
         raise DecryptionError("missing 'msg' argument")
 
-    try:
-        versioned = base64.urlsafe_b64decode(msg)
-    except Exception:
-        raise DecryptionError("message is not valid base64")
-
-    if len(versioned) < 2:
-        raise DecryptionError("message too short for version header")
-
-    bundle_version = f"{versioned[0]}.{versioned[1]}"
-    if not _matches_specifier(bundle_version, version):
-        raise DecryptionError(
-            f"version mismatch: bundle is v{bundle_version}, "
-            f"caller requested v{version}"
-        )
-
+    bundle_version, inner_b64 = _ver._unwrap_version_bytes(msg, version)
     handler = _DECRYPT_VERSIONS.get(bundle_version)
     if handler is None:
         raise VersionNotFoundError(bundle_version)
-
-    inner_b64 = base64.urlsafe_b64encode(versioned[2:]).decode()
     return handler(*args, msg=inner_b64, **kwargs)
 
 
@@ -400,7 +325,7 @@ def genkeys(version: str, *args: Any, **kwargs: Any) -> dict[str, str | list[str
     `version` may be an exact version (e.g. `"1.0"`) or a major-only\n
     specifier (e.g. `"1"`) which resolves to the latest minor available.\n
     See docs for older versions."""
-    actual_version = _resolve_version(version, _GEN_KEYS_VERSIONS)
+    actual_version = _ver._resolve_version(version, _GEN_KEYS_VERSIONS)
     handler = _GEN_KEYS_VERSIONS[actual_version]
     return handler(*args, **kwargs)
 
@@ -409,15 +334,7 @@ def getversion(msg: str) -> str:
     """Extract the protocol version from a bundle without decrypting it.\n
     Useful for routing or migration logic.\n
     Raises `DecryptionError` if the bundle is malformed."""
-    if not isinstance(msg, str):
-        raise ArgumentTypeError("msg", type(msg))
-    try:
-        versioned = base64.urlsafe_b64decode(msg)
-    except Exception:
-        raise DecryptionError("message is not valid base64")
-    if len(versioned) < 2:
-        raise DecryptionError("message too short for version header")
-    return f"{versioned[0]}.{versioned[1]}"
+    return _ver._extract_version(msg)
 
 
 # Constants:

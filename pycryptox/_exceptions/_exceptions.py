@@ -51,3 +51,8 @@ class WrongPasswordError(PycryptoxError):
     def __init__(self, reason="Unknown reason"):
         message = f"Wrong password because '{reason}'"
         super().__init__(message)
+
+class DowngradeError(PycryptoxError):
+    def __init__(self, old_version="Unknown", new_version="Unknown"):
+        message = f"Refused to downgrade from v{old_version} to v{new_version}; pass downgrade=True to force"
+        super().__init__(message)

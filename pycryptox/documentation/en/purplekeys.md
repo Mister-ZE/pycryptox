@@ -31,7 +31,7 @@ Writes are **atomic**: the file is written to a temporary file then renamed. A p
 
 ### Module functions
 
-#### `crx.keyx.purplekeys.createdb(password, dbpath) -> None`
+#### `crx.keyx.purplekeys.createdb(password, dbpath, level="strong") -> None`
 
 Creates a new empty Keyx.
 
@@ -39,12 +39,13 @@ Creates a new empty Keyx.
 |---|---|---|
 | `password` | `str` | Master password. |
 | `dbpath` | `str \| Path` | File path. Must end with `.purple`. |
+| `level` | `str` | Argon2id strength level. One of `"low"`, `"normal"`, `"strong"`, `"extreme"`. Default `"strong"`. |
 
-Parent directories are created automatically if they do not exist.
+Parent directories are created automatically if they do not exist. The level is embedded in the file and read automatically at `open()`.
 
 **Exceptions**:
-- `KeyxError` — if the file already exists, or if the extension is not `.purple`.
-- `ArgumentTypeError` — if `password` is not a `str`.
+- `KeyxError` — if the file already exists, the extension is not `.purple`, or `level` is unknown.
+- `ArgumentTypeError` — if `password` or `level` is not a `str`.
 
 
 #### `crx.keyx.purplekeys.open(password, dbpath) -> _PurpleSession`
@@ -59,8 +60,10 @@ Opens an existing Keyx and returns a session.
 
 **Exceptions**:
 - `WrongPasswordError` — if the password is incorrect.
-- `KeyxError` — if the file is not found, corrupted, or has an invalid magic.
+- `KeyxError` — if the file is not found, corrupted, has an invalid magic, or was created by pycryptox < 3.0.0 (PURPLE v1.0 keyx files are not supported in 3.0.0+; see *Migrating from 2.x* below).
 - `ArgumentTypeError` — if `password` is not a `str`.
+
+The session inherits the Argon2id level from the file. Use `session.getlevel()` to inspect it and `session.changelevel(new_level)` to migrate to a different level on next save.
 
 Recommended usage with `with`:
 
@@ -164,12 +167,39 @@ Changes the Keyx's master password. Raises `WrongPasswordError` if `old_password
 
 The password change takes effect immediately in the file (no need for `close` or to exit the `with`). The new password will be used at the next commit (when exiting the `with` or calling `close`).
 
+#### `session.changelevel(new_level) -> None` *(new in v3.0.0)*
+
+Changes the Argon2id strength level for subsequent saves. `new_level` must be one of `"low"`, `"normal"`, `"strong"`, `"extreme"`.
+
+The change applies to the next commit. Calling `changelevel` with the same value as the current one is a no-op (the session is not marked dirty).
+
+**Exceptions**:
+- `ArgumentTypeError` — if `new_level` is not a `str`.
+- `KeyxError` — if `new_level` is not a recognised level name.
+
+#### `session.getlevel() -> str` *(new in v3.0.0)*
+
+Returns the current Argon2id strength level of the session (set by `open()` from the file, or modified by `changelevel`).
+
 #### `session.backup(target_path) -> None`
 
-Creates a copy of the Keyx in its current state (including modifications not yet committed). The backup file is a valid Keyx, openable with the same password. `target_path` must end with `.purple`.
+Creates a copy of the Keyx in its current state (including modifications not yet committed). The backup file is a valid Keyx, openable with the same password and at the current session level. `target_path` must end with `.purple`.
 
 #### `session.close(commit=True) -> None`
 
 Closes the session. If `commit=True` (default), writes modifications to the file. If `commit=False`, abandons modifications.
 
 Calling `close()` on an already-closed session is a no-op (no exception).
+
+
+## Migrating from 2.x
+
+Pycryptox 3.0.0 hard-breaks compatibility with `.purple` files created by 2.x releases. The reason: the underlying PURPLE protocol was upgraded from v1.0 to v2.0 to introduce adjustable Argon2id strength. The 2.x files embed v1.0 PURPLE bundles, which 3.0.0 refuses to open with a clear error:
+
+```
+KeyxError: Error with Keyx because 'unsupported keyx PURPLE version v1.0;
+this build expects v2.x (created by pycryptox 3.0.0+)'
+```
+
+A migration script can be written using a pycryptox 2.x install to dump entries and a 3.0.0+ install to recreate the Keyx. There is no in-place migration tool: keep a 2.x venv around if you need to read the old files.
+

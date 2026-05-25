@@ -39,10 +39,11 @@ def _validate_entry(entry: dict[str, str]) -> None:
 
 # Classes:
 class _KeysSession:
-    def __init__(self, password: str, dbpath: Path, entries: dict[str, dict[str, str]]) -> None:
+    def __init__(self, password: str, dbpath: Path, entries: dict[str, dict[str, str]], level: str) -> None:
         self._password = password
         self._dbpath = dbpath
         self._entries = {k: dict(v) for k, v in entries.items()}
+        self._level = level
         self._dirty = False
         self._closed = False
 
@@ -172,13 +173,33 @@ class _KeysSession:
         self._password = new_password
         self._dirty = True
 
+    def changelevel(self, new_level: str) -> None:
+        """Change the Argon2id strength level for subsequent saves.\n
+        Accepts `"low"`, `"normal"`, `"strong"`, `"extreme"`. Idempotent
+        if `new_level` equals the current level."""
+        self._check_open()
+        if not isinstance(new_level, str):
+            raise ArgumentTypeError("new_level", type(new_level))
+        if new_level not in purple._LEVELS:
+            raise KeyxError(
+                f"unknown level '{new_level}', expected one of {sorted(purple._LEVELS)}"
+            )
+        if new_level != self._level:
+            self._level = new_level
+            self._dirty = True
+
+    def getlevel(self) -> str:
+        """Return the current Argon2id strength level of the session."""
+        self._check_open()
+        return self._level
+
     def backup(self, target_path: str | os.PathLike) -> None:
         """Write a copy of the encrypted store to `target_path`."""
         self._check_open()
         target = Path(target_path)
         _common._validate_extension(target, _REQUIRED_EXTENSION)
-        head_ct = _common._make_head(self._password)
-        payload_ct = _common._make_payload(self._password, self._entries, _FORMAT_TAG, _FORMAT_VERSION)
+        head_ct = _common._make_head(self._password, level=self._level)
+        payload_ct = _common._make_payload(self._password, self._entries, _FORMAT_TAG, _FORMAT_VERSION, level=self._level)
         _common._write_layout(target, _MAGIC, head_ct, payload_ct)
 
     def close(self, commit: bool = True) -> None:
@@ -187,8 +208,8 @@ class _KeysSession:
             return
         try:
             if commit and self._dirty:
-                head_ct = _common._make_head(self._password)
-                payload_ct = _common._make_payload(self._password, self._entries, _FORMAT_TAG, _FORMAT_VERSION)
+                head_ct = _common._make_head(self._password, level=self._level)
+                payload_ct = _common._make_payload(self._password, self._entries, _FORMAT_TAG, _FORMAT_VERSION, level=self._level)
                 _common._write_layout(self._dbpath, _MAGIC, head_ct, payload_ct)
                 self._dirty = False
         finally:
@@ -210,16 +231,23 @@ __all__ = [
 ]
 
 
-def createdb(password: str, dbpath: str | os.PathLike) -> None:
-    """Create a new empty Keyx at `dbpath`, encrypted with `password`."""
+def createdb(password: str, dbpath: str | os.PathLike, level: str = "strong") -> None:
+    """Create a new empty Keyx at `dbpath`, encrypted with `password` at
+    Argon2id strength `level` (`"low" | "normal" | "strong" | "extreme"`)."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
+    if not isinstance(level, str):
+        raise ArgumentTypeError("level", type(level))
+    if level not in purple._LEVELS:
+        raise KeyxError(
+            f"unknown level '{level}', expected one of {sorted(purple._LEVELS)}"
+        )
     dbpath = Path(dbpath)
     _common._validate_extension(dbpath, _REQUIRED_EXTENSION)
     if dbpath.exists():
         raise KeyxError(f"database already exists at '{dbpath}'")
-    head_ct = _common._make_head(password)
-    payload_ct = _common._make_payload(password, {}, _FORMAT_TAG, _FORMAT_VERSION)
+    head_ct = _common._make_head(password, level=level)
+    payload_ct = _common._make_payload(password, {}, _FORMAT_TAG, _FORMAT_VERSION, level=level)
     _common._write_layout(dbpath, _MAGIC, head_ct, payload_ct)
 
 
@@ -237,6 +265,7 @@ def destroy(password: str, dbpath: str | os.PathLike, passwordrequired: bool = T
         raise KeyxError(f"database not found at '{dbpath}'")
     if passwordrequired:
         head_ct, _ = _common._read_layout(dbpath, _MAGIC)
+        _common._check_keyx_purple_version(head_ct)
         try:
             purple.decrypt(_common._PURPLE_VERSION, password, head_ct)
         except DecryptionError:
@@ -259,6 +288,7 @@ def verify(password: str, dbpath: str | os.PathLike) -> bool:
     dbpath = Path(dbpath)
     _common._validate_extension(dbpath, _REQUIRED_EXTENSION)
     head_ct, _ = _common._read_layout(dbpath, _MAGIC)
+    _common._check_keyx_purple_version(head_ct)
     try:
         purple.decrypt(_common._PURPLE_VERSION, password, head_ct)
     except DecryptionError:
@@ -272,12 +302,16 @@ def open(password: str, dbpath: str | os.PathLike) -> _KeysSession:
     with crx.keyx.bluekeys.keys.open(password, dbpath) as s:
         s.add("alice", mygpubkey, hgpubkey, privkey)
     ```
-    Raises `WrongPasswordError` on wrong password."""
+    The session inherits the Argon2id level from the file; use
+    `session.changelevel(...)` to migrate to a different level on save.\n
+    Raises `WrongPasswordError` on wrong password, `KeyxError` if the
+    file is from a pre-3.0.0 release (PURPLE v1.0 keyx not supported)."""
     if not isinstance(password, str):
         raise ArgumentTypeError("password", type(password))
     dbpath = Path(dbpath)
     _common._validate_extension(dbpath, _REQUIRED_EXTENSION)
     head_ct, payload_ct = _common._read_layout(dbpath, _MAGIC)
+    _common._check_keyx_purple_version(head_ct)
     try:
         purple.decrypt(_common._PURPLE_VERSION, password, head_ct)
     except DecryptionError:
@@ -287,4 +321,5 @@ def open(password: str, dbpath: str | os.PathLike) -> _KeysSession:
     except DecryptionError:
         raise KeyxError("payload corrupted or tampered")
     entries = _common._parse_payload(payload_str, _FORMAT_TAG, _REQUIRED_FIELDS)
-    return _KeysSession(password, dbpath, entries)
+    level = _common._read_level(head_ct)
+    return _KeysSession(password, dbpath, entries, level)

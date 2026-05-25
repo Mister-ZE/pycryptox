@@ -8,7 +8,6 @@ Toutes les exceptions de Pycryptox héritent de `PycryptoxError`, elle-même hé
 ```
 Exception
 └── PycryptoxError               Exception de base de Pycryptox.
-    ├── ProtocolNotFoundError    Protocole inconnu.
     ├── VersionNotFoundError     Version de protocole inconnue.
     ├── ArgumentTypeError        Type d'argument invalide.
     ├── DecryptionError          Échec de déchiffrement.
@@ -17,7 +16,8 @@ Exception
     ├── UnstegaError             Échec de déstéganographie (YELLOW, futur).
     ├── KeyxError            Erreur de Keyx (fichier, format, état).
     ├── KeyNameError             Erreur liée au nom d'une entrée dans un Keyx.
-    └── WrongPasswordError       Mot de passe incorrect pour un Keyx.
+    ├── WrongPasswordError       Mot de passe incorrect pour un Keyx.
+    └── DowngradeError           Downgrade refusé dans `update_bundle` (forcer avec `downgrade=True`).
 ```
 
 
@@ -85,21 +85,21 @@ Causes possibles :
 
 Réservée pour YELLOW v1.0. Non utilisée dans la version actuelle.
 
-Message : `"Error during steganography because '<raison>'"`.
+Message : `"Error during stega because '<raison>'"`.
 
 
 ### `UnstegaError`
 
 Réservée pour YELLOW v1.0. Non utilisée dans la version actuelle.
 
-Message : `"Error during unsteganography because '<raison>'"`.
+Message : `"Error during unstega because '<raison>'"`.
 
 
 ### `KeyxError`
 
 Levée pour toute erreur liée à l'état ou au format d'un Keyx.
 
-Message : `"Keyx error because '<raison>'"`.
+Message : `"Error with Keyx because '<raison>'"`.
 
 Causes possibles :
 - Extension de fichier incorrecte.
@@ -114,7 +114,7 @@ Causes possibles :
 
 Levée pour les erreurs liées aux noms d'entrées dans un Keyx.
 
-Message : `"Key name error because '<raison>'"`.
+Message : `"Error with key name because '<raison>'"`.
 
 Causes possibles :
 - Entrée non trouvée (dans `getkey`, `get`, `update`, `rename`, `delete`).
@@ -127,9 +127,18 @@ Causes possibles :
 
 Levée quand le mot de passe fourni à un Keyx est incorrect.
 
-Message : `"Wrong password"`.
+Message : `"Wrong password because '<raison>'"`.
 
 Levée par `open()`, `destroy()` (si `passwordrequired=True`), et `changepwd()` (si l'ancien mot de passe est faux).
+
+
+### `DowngradeError`
+
+Levée par `update_bundle` quand la migration ferait passer un bundle à une version de protocole plus ancienne, et que `downgrade=True` n'a pas été passé explicitement.
+
+Message : `"Refused to downgrade from v<old> to v<new>; pass downgrade=True to force"`.
+
+Le défaut `downgrade=False` impose des migrations uniquement ascendantes. Passer `downgrade=True` comme dernier argument d'`update_bundle` pour contourner ce contrôle quand on veut vraiment écrire un bundle plus ancien (tests, interop avec des lecteurs legacy).
 
 
 ## Usage en interception

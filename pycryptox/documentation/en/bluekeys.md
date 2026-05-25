@@ -67,18 +67,26 @@ The API is identical between `keys` and `ckeys`. The examples below use `keys`; 
 
 ### Module functions
 
-#### `createdb(password, dbpath) -> None`
+#### `createdb(password, dbpath, level="strong") -> None`
 
 Creates a new empty Keyx.
 
 ```python
-crx.keyx.bluekeys.keys.createdb("master-pwd", "channels.keys")
-crx.keyx.bluekeys.ckeys.createdb("master-pwd", "/usb/critical.ckeys")
+crx.keyx.bluekeys.keys.createdb("master-pwd", "channels.keys")                     # default level = "strong"
+crx.keyx.bluekeys.ckeys.createdb("master-pwd", "/usb/critical.ckeys", level="extreme")
 ```
 
+| Parameter | Type | Description |
+|---|---|---|
+| `password` | `str` | Master password. |
+| `dbpath` | `str \| Path` | File path. Must end with `.keys` (for `keys`) or `.ckeys` (for `ckeys`). |
+| `level` | `str` | Argon2id strength level. One of `"low"`, `"normal"`, `"strong"`, `"extreme"`. Default `"strong"`. |
+
+The level is embedded in the file and read automatically at `open()`.
+
 **Exceptions**:
-- `KeyxError` — if the file already exists or if the extension is incorrect.
-- `ArgumentTypeError` — if `password` is not a `str`.
+- `KeyxError` — if the file already exists, the extension is incorrect, or `level` is unknown.
+- `ArgumentTypeError` — if `password` or `level` is not a `str`.
 
 #### `open(password, dbpath) -> _KeysSession / _CKeysSession`
 
@@ -89,17 +97,19 @@ with crx.keyx.bluekeys.keys.open("master-pwd", "channels.keys") as s:
     ...
 ```
 
+The session inherits the Argon2id level from the file. Use `session.getlevel()` to inspect it and `session.changelevel(new_level)` to migrate to a different level on next save.
+
 **Exceptions**:
 - `WrongPasswordError` — incorrect password.
-- `KeyxError` — file not found, corrupted, invalid magic, or incorrect extension.
+- `KeyxError` — file not found, corrupted, invalid magic, incorrect extension, or created by pycryptox < 3.0.0 (PURPLE v1.0 keyx files are not supported in 3.0.0+; see *Migrating from 2.x* below).
 
 #### `verify(password, dbpath) -> bool`
 
-Verifies the password without opening the Keyx. `True` = correct, `False` = incorrect. Raises `KeyxError` if the file is not a valid Keyx of the right type.
+Verifies the password without opening the Keyx. `True` = correct, `False` = incorrect. Raises `KeyxError` if the file is not a valid Keyx of the right type or was created by pycryptox < 3.0.0.
 
 #### `destroy(password, dbpath, passwordrequired=True) -> None`
 
-Deletes the Keyx. Raises `WrongPasswordError` if the password is wrong (unless `passwordrequired=False`).
+Deletes the Keyx. Raises `WrongPasswordError` if the password is wrong (unless `passwordrequired=False`). Raises `KeyxError` if the file was created by pycryptox < 3.0.0 and `passwordrequired=True`.
 
 
 ### Session methods
@@ -171,13 +181,39 @@ Deletes a channel. Raises `KeyNameError` if `name` does not exist.
 
 Changes the master password. Raises `WrongPasswordError` if the old password is wrong.
 
+#### `session.changelevel(new_level) -> None` *(new in v3.0.0)*
+
+Changes the Argon2id strength level for subsequent saves. `new_level` must be one of `"low"`, `"normal"`, `"strong"`, `"extreme"`.
+
+The change applies to the next commit. Calling with the same level as the current one is a no-op.
+
+**Exceptions**:
+- `ArgumentTypeError` — if `new_level` is not a `str`.
+- `KeyxError` — if `new_level` is not a recognised level name.
+
+#### `session.getlevel() -> str` *(new in v3.0.0)*
+
+Returns the current Argon2id strength level of the session.
+
 #### `session.backup(target_path) -> None`
 
-Creates a copy of the Keyx. The extension of `target_path` must match the Keyx type (`.keys` for keys, `.ckeys` for ckeys).
+Creates a copy of the Keyx at the current session level. The extension of `target_path` must match the Keyx type (`.keys` for keys, `.ckeys` for ckeys).
 
 #### `session.close(commit=True) -> None`
 
 Closes the session. `commit=True` = writes modifications. `commit=False` = abandons them. Idempotent.
+
+
+## Migrating from 2.x
+
+Pycryptox 3.0.0 hard-breaks compatibility with `.keys` and `.ckeys` files created by 2.x releases (which embedded PURPLE v1.0 bundles). Opening such a file in 3.0.0+ raises a clear error:
+
+```
+KeyxError: Error with Keyx because 'unsupported keyx PURPLE version v1.0;
+this build expects v2.x (created by pycryptox 3.0.0+)'
+```
+
+There is no in-place migration tool. Use a 2.x venv to dump entries, then recreate the Keyx in 3.0.0+ with the level of your choice.
 
 
 ## Cross-module discrimination

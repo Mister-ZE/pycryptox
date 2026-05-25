@@ -19,7 +19,8 @@ from ..._colorx import purple
 
 # Functions:
 _HEAD_RANDOM_SIZE = 64
-_PURPLE_VERSION = "1"
+_PURPLE_VERSION = "2"
+_DEFAULT_LEVEL = "strong"
 
 
 def _validate_extension(dbpath: Path, expected_ext: str) -> None:
@@ -68,8 +69,8 @@ def _write_layout(dbpath: Path, magic: bytes, head_ct: str, payload_ct: str) -> 
     _atomic_write(dbpath, data)
 
 
-def _make_head(password: str) -> str:
-    return purple.encrypt(_PURPLE_VERSION, password, secrets.token_urlsafe(_HEAD_RANDOM_SIZE))
+def _make_head(password: str, level: str = _DEFAULT_LEVEL) -> str:
+    return purple.encrypt(_PURPLE_VERSION, password, secrets.token_urlsafe(_HEAD_RANDOM_SIZE), level=level)
 
 
 def _make_payload(
@@ -77,9 +78,32 @@ def _make_payload(
     entries: dict[str, dict[str, str]],
     format_tag: str,
     format_version: int,
+    level: str = _DEFAULT_LEVEL,
 ) -> str:
     obj = {"format": format_tag, "version": format_version, "entries": entries}
-    return purple.encrypt(_PURPLE_VERSION, password, json.dumps(obj, ensure_ascii=False, sort_keys=True))
+    return purple.encrypt(_PURPLE_VERSION, password, json.dumps(obj, ensure_ascii=False, sort_keys=True), level=level)
+
+
+def _check_keyx_purple_version(head_ct: str) -> None:
+    """Verify the embedded PURPLE bundle is at the version this build supports.\n
+    Raises `KeyxError` with a clear message if the bundle is from an older
+    pycryptox release (hard break in 3.0.0)."""
+    try:
+        head_version = purple.getversion(head_ct)
+    except DecryptionError:
+        raise KeyxError("corrupted head bundle")
+    if not head_version.startswith(_PURPLE_VERSION + "."):
+        raise KeyxError(
+            f"unsupported keyx PURPLE version v{head_version}; "
+            f"this build expects v{_PURPLE_VERSION}.x (created by pycryptox 3.0.0+)"
+        )
+
+
+def _read_level(head_ct: str) -> str:
+    """Read the encryption level from an opened keyx head bundle.\n
+    The head_ct is expected to be a PURPLE v2.0+ bundle; call
+    `_check_keyx_purple_version` first."""
+    return purple.getlevel(head_ct)
 
 
 def _parse_payload(
@@ -133,4 +157,4 @@ def _fuzzy_score(query: str, candidate: str, **kwargs: Any) -> float:
         score += 50
     elif q in c:
         score += 25
-    return max(score, 0.0)
+    return max(score, 0.0)

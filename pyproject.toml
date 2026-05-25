@@ -1,16 +1,16 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycryptox"
-version = "2.0.2"
+version = "3.0.0"
 description = "Post-quantum cryptography library with built-in plausible deniability."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    {name = "Mister Z"},
+    {name = "Cryptox", email = "z.e.pro@outlook.fr"},
 ]
 keywords = ["cryptography", "post-quantum", "encryption", "deniability", "ml-kem", "kyber"]
 classifiers = [
@@ -31,9 +31,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Mister-ZE/pycryptox/tree/main/pycryptox/documentation/en"
-Repository = "https://github.com/Mister-ZE/pycryptox"
-Issues = "https://github.com/Mister-ZE/pycryptox/issues"
+Documentation = "https://github.com/cryptoxsystems/pycryptox/tree/main/pycryptox/documentation/en"
+Repository = "https://github.com/cryptoxsystems/pycryptox"
+Issues = "https://github.com/cryptoxsystems/pycryptox/issues"
 
 [tool.setuptools]
 packages = [

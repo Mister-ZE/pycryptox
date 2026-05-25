@@ -16,6 +16,7 @@ Pycryptox/
 │
 ├── _colorx/                     The encryption protocols.
 │   ├── _black.py                Internal protocol (ML-KEM-512 + ChaCha20-Poly1305).
+│   ├── _versioning.py           Internal version-dispatch helpers shared by purple, blue, red.
 │   ├── purple.py                Password-based encryption.
 │   ├── blue.py                  Deniable asymmetric encryption.
 │   ├── red.py                   Threshold encryption.
@@ -129,8 +130,8 @@ The major and minor values are unsigned bytes: from 0 to 255. This allows 256 ×
 
 | Protocol | Stable version | Notes |
 |---|---|---|
-| PURPLE | 1.0 | Argon2id + ChaCha20-Poly1305 |
-| BLUE | 1.0 | ML-KEM-512 + chemical key mixing |
+| PURPLE | 2.0 | Argon2id (adjustable: low/normal/strong/extreme) + ChaCha20-Poly1305 |
+| BLUE | 2.0 | ML-KEM-512 + randomized slot order + bucket padding (up to 1 GiB) + async mode |
 | RED | 1.0 | Shamir GF(256) + BLACK |
 | YELLOW | 0.0 | Placeholder, non-functional |
 | BLACK | 1.0 | Internal, no versioning in the bundle |

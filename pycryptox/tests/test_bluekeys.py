@@ -203,6 +203,95 @@ def test_bluekeys() -> tuple[int, int]:
                    crx.KeyxError,
                    lambda: crx.keyx.purplekeys.open(PWD, spoof2))
 
+    # ===================== Levels (v3.0.0+) =====================
+    print("\n  --- levels (v3.0.0+) ---")
+
+    # -- bluekeys.keys: createdb at each level + getlevel --
+    for lvl in ("low", "normal", "strong", "extreme"):
+        lvl_db = tmp / f"keys_lvl_{lvl}.keys"
+        bk.createdb(PWD, lvl_db, level=lvl)
+        with bk.open(PWD, lvl_db) as s:
+            c.assert_eq(f"keys createdb(level={lvl}) -> session.getlevel()",
+                        lambda s=s, lvl=lvl: s.getlevel(), lvl)
+
+    # -- bluekeys.keys: default level is "strong" --
+    def_keys = tmp / "default.keys"
+    bk.createdb(PWD, def_keys)
+    with bk.open(PWD, def_keys) as s:
+        c.assert_eq("keys default createdb level is 'strong'",
+                    lambda: s.getlevel(), "strong")
+
+    # -- bluekeys.keys: changelevel persists --
+    cl_keys = tmp / "cl.keys"
+    bk.createdb(PWD, cl_keys, level="normal")
+    with bk.open(PWD, cl_keys) as s:
+        s.add("alice", alice["gpubkey"], bob["gpubkey"], alice["xprivkey"])
+        s.changelevel("extreme")
+    with bk.open(PWD, cl_keys) as s2:
+        c.assert_eq("keys changelevel persists after re-open",
+                    lambda: s2.getlevel(), "extreme")
+        c.assert_eq("keys changelevel preserves entries",
+                    lambda: s2.get("alice")["privkey"], alice["xprivkey"])
+
+    # -- bluekeys.keys: changelevel bad input --
+    cl_bad = tmp / "cl_bad.keys"
+    bk.createdb(PWD, cl_bad)
+    with bk.open(PWD, cl_bad) as s:
+        c.assert_raise("keys changelevel to unknown raises KeyxError",
+                       crx.KeyxError,
+                       lambda s=s: s.changelevel("godlike"))
+        c.assert_raise("keys changelevel non-str raises ArgumentTypeError",
+                       crx.ArgumentTypeError,
+                       lambda s=s: s.changelevel(7))
+
+    # -- bluekeys.keys: createdb invalid level --
+    c.assert_raise("keys createdb with unknown level raises KeyxError",
+                   crx.KeyxError,
+                   lambda: bk.createdb(PWD, tmp / "bad.keys", level="godlike"))
+    c.assert_raise("keys createdb non-str level raises ArgumentTypeError",
+                   crx.ArgumentTypeError,
+                   lambda: bk.createdb(PWD, tmp / "bad2.keys", level=2))
+
+    # -- bluekeys.ckeys: createdb at each level + getlevel --
+    for lvl in ("low", "normal", "strong", "extreme"):
+        lvl_db = tmp / f"ckeys_lvl_{lvl}.ckeys"
+        ck.createdb(PWD, lvl_db, level=lvl)
+        with ck.open(PWD, lvl_db) as s:
+            c.assert_eq(f"ckeys createdb(level={lvl}) -> session.getlevel()",
+                        lambda s=s, lvl=lvl: s.getlevel(), lvl)
+
+    # -- bluekeys.ckeys: default level is "strong" --
+    def_ck = tmp / "default.ckeys"
+    ck.createdb(PWD, def_ck)
+    with ck.open(PWD, def_ck) as s:
+        c.assert_eq("ckeys default createdb level is 'strong'",
+                    lambda: s.getlevel(), "strong")
+
+    # -- bluekeys.ckeys: changelevel persists --
+    cl_ck = tmp / "cl.ckeys"
+    ck.createdb(PWD, cl_ck, level="low")
+    with ck.open(PWD, cl_ck) as s:
+        s.add("alice", alice["gpubkey"], bob["gpubkey"], alice["yprivkey"])
+        s.changelevel("strong")
+    with ck.open(PWD, cl_ck) as s2:
+        c.assert_eq("ckeys changelevel persists after re-open",
+                    lambda: s2.getlevel(), "strong")
+        c.assert_eq("ckeys changelevel preserves entries",
+                    lambda: s2.get("alice")["cprivkey"], alice["yprivkey"])
+
+    # -- bluekeys.ckeys: changelevel bad input --
+    cl_ck_bad = tmp / "cl_bad.ckeys"
+    ck.createdb(PWD, cl_ck_bad)
+    with ck.open(PWD, cl_ck_bad) as s:
+        c.assert_raise("ckeys changelevel to unknown raises KeyxError",
+                       crx.KeyxError,
+                       lambda s=s: s.changelevel("hyperstrong"))
+
+    # -- bluekeys.ckeys: createdb invalid level --
+    c.assert_raise("ckeys createdb with unknown level raises KeyxError",
+                   crx.KeyxError,
+                   lambda: ck.createdb(PWD, tmp / "bad.ckeys", level="hyperstrong"))
+
     # ===================== End-to-end with BLUE =====================
     print("\n  --- end-to-end with BLUE ---")
 
