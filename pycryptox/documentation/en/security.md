@@ -49,9 +49,11 @@ Pycryptox does not implement forward secrecy. If a user's ML-KEM-512 private key
 
 **Conditional deniability**: BLUE's deniability is cryptographic (the bundle does not betray the existence of two channels — see the dedicated section in the [BLUE](blue.md) documentation), but it depends on user behavior. If both private keys are stored in the same place, deniability is null. Physical key separation is required.
 
-**Decryption oracle**: the noise in the BLUE bundle is not authenticated. An attacker who can submit modified bundles and observe whether decryption succeeds or fails could map the positions of the chemical keys. Applications must avoid exposing success/failure status to unauthenticated parties.
+**Decoy credibility (operational)**: BLUE makes the two channels cryptographically indistinguishable, but it cannot ensure the decoy content is *credible*. An empty or absurd y-channel message defeats the deniability regardless of what the cryptography does. The credibility of the decoy is the responsibility of the application layer.
 
-**Maximum size**: BLUE messages are limited to 1 MB in v1.0.
+**Maximum size**: in v2.0, BLUE caps each slot at **1 GiB** with 8 fixed padding buckets (4 KB, 16 KB, 64 KB, 256 KB, 1 MB, 16 MB, 256 MB, 1 GiB). At sizes approaching the cap, peak RAM usage may reach ~7–9 GiB; users on memory-constrained machines should stay well below. In v1.0 (legacy, frozen), the cap is 1 MB.
+
+**Legacy oracle on v1.0**: v1.0 bundles include an unauthenticated noise layer between the authenticated chemkey blobs. An attacker who can submit modified v1.0 bundles and observe success/failure can map the chemkey positions, partially compromising slot identification. v2.0 removes the noise layer entirely (the bundle is `[order_flag][len][enc_x][enc_y]`, both AEAD-authenticated), eliminating this oracle. New deployments should use v2.0.
 
 ### RED
 
