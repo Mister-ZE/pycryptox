@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycryptox"
-version = "3.0.0"
+version = "3.0.1"
 description = "Post-quantum cryptography library with built-in plausible deniability."
 readme = "README.md"
 license = "MIT"
